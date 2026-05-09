@@ -446,12 +446,14 @@ function drawDonut(id, data, colors, labels) {
   const setup = setupCanvas(id);
   if (!setup) return;
   const { ctx, W, H } = setup;
-  const legendH = Math.min(labels.length, 7) * 20 + 12;
-  const chartH   = H - legendH;
-  const cx = W/2, cy = chartH/2;
-  const R = Math.min(cx, cy) - 14;
-  const r = R * 0.6;
   const total = data.reduce((a,b)=>a+b,0);
+  // Cap legend to items that have values (max 5) to prevent overflow
+  const shownItems = labels.map((l,i)=>({l,i,v:data[i]})).filter(x=>x.v>0).slice(0,5);
+  const legendH = shownItems.length * 20 + 12;
+  const chartH  = H - legendH;
+  const cx = W/2, cy = Math.max(chartH/2, 20);
+  const R = Math.max(Math.min(cx, cy) - 14, 0);
+  const r = R * 0.6;
 
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, W, H);
@@ -489,25 +491,24 @@ function drawDonut(id, data, colors, labels) {
   // Center text
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#4A1D05';
-  ctx.font = 'bold 26px Instrument Serif, serif';
-  ctx.fillText(total, cx, cy - 8);
-  ctx.font = '10px Inter, sans-serif';
-  ctx.fillStyle = '#8B8B8B';
+  ctx.fillStyle = '#18181B';
+  ctx.font = '700 24px Inter, sans-serif';
+  ctx.fillText(total, cx, cy - 7);
+  ctx.font = '500 10px Inter, sans-serif';
+  ctx.fillStyle = '#A1A1AA';
   ctx.fillText('total', cx, cy + 12);
 
-  // Legend at bottom (only non-zero)
-  const shown = labels.map((l,i)=>({l,i,v:data[i]})).filter(x=>x.v>0).slice(0,7);
+  // Legend at bottom
   const lx = 6;
-  shown.forEach(({l, i, v}, idx) => {
+  shownItems.forEach(({l, i, v}, idx) => {
     const y = chartH + 10 + idx * 20;
     // dot
     ctx.beginPath();
     ctx.arc(lx + 5, y + 6, 5, 0, Math.PI*2);
     ctx.fillStyle = colors[i] || '#ccc';
     ctx.fill();
-    ctx.fillStyle = '#5C5C5C';
-    ctx.font = '10.5px Inter, sans-serif';
+    ctx.fillStyle = '#52525B';
+    ctx.font = '500 10.5px Inter, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(`${l}  ${v}`, lx + 14, y);
@@ -533,11 +534,11 @@ function drawVerticalBar(id, labels, values, color='#F45A00', maxVal) {
     const y = padT + chartH * (1 - pct);
     ctx.beginPath();
     ctx.moveTo(padL, y); ctx.lineTo(W - padR, y);
-    ctx.strokeStyle = pct === 0 ? 'rgba(74,29,5,0.1)' : 'rgba(74,29,5,0.04)';
+    ctx.strokeStyle = pct === 0 ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.04)';
     ctx.lineWidth = 1;
     ctx.stroke();
     if (pct > 0) {
-      ctx.fillStyle = '#B0A89E';
+      ctx.fillStyle = '#A1A1AA';
       ctx.font = '9px Inter, sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
@@ -571,7 +572,7 @@ function drawVerticalBar(id, labels, values, color='#F45A00', maxVal) {
 
     // value above bar
     if (values[i] > 0) {
-      ctx.fillStyle = '#4A1D05';
+      ctx.fillStyle = '#18181B';
       ctx.font = '600 10.5px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
@@ -1070,7 +1071,7 @@ function updateEngagementPreview() {
   const eng = calcEngagement(current, plat);
   const box = document.getElementById('statsEngagementBox');
   if (eng!==null) {
-    box.innerHTML = `<strong>Engagement calculado (${plat}):</strong> <span style="color:var(--naranja);font-size:18px;font-weight:700;">${eng}%</span>`;
+    box.innerHTML = `<strong>Engagement calculado (${plat}):</strong> <span style="color:var(--orange);font-size:18px;font-weight:700;">${eng}%</span>`;
     box.style.display='block';
   } else {
     box.style.display='none';
@@ -1593,5 +1594,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cb) cb.addEventListener('click', execConfirm);
 
   updateSidebarBrand();
-  switchTab('dashboard');
+  // Double rAF ensures CSS layout is computed before charts draw
+  requestAnimationFrame(() => requestAnimationFrame(() => switchTab('dashboard')));
 });
