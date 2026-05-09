@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Agencia — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <span class="logo-icon">◈</span>
+    <span class="logo-text">Mi Agencia</span>
+  </div>
+
+  <!-- Brand switcher -->
+  <div class="brand-switcher" id="brandSwitcher">
+    <div class="brand-current" id="brandCurrentBtn" onclick="toggleBrandDropdown()">
+      <div class="brand-avatar" id="sidebarBrandAvatar"></div>
+      <div class="brand-info">
+        <div class="brand-name" id="sidebarBrandName">Cargando...</div>
+        <div class="brand-sector" id="sidebarBrandSector"></div>
+      </div>
+      <span class="brand-chevron">⌄</span>
+    </div>
+    <div class="brand-dropdown" id="brandDropdown">
+      <div class="brand-list" id="brandList"></div>
+      <button class="btn-nueva-marca" onclick="openNuevaMarca()">+ Nueva marca</button>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav" id="sidebarNav">
+    <button class="nav-item active" data-tab="dashboard"    onclick="switchTab('dashboard')"><span class="nav-icon">◉</span> Dashboard</button>
+    <button class="nav-item"        data-tab="parrilla"     onclick="switchTab('parrilla')"><span class="nav-icon">⊞</span> Parrilla</button>
+    <button class="nav-item"        data-tab="estadisticas" onclick="switchTab('estadisticas')"><span class="nav-icon">▦</span> Estadísticas</button>
+    <button class="nav-item"        data-tab="feed"         onclick="switchTab('feed')"><span class="nav-icon">⊡</span> Feed IG</button>
+    <button class="nav-item"        data-tab="contractual"  onclick="switchTab('contractual')"><span class="nav-icon">◧</span> Contractual</button>
+    <button class="nav-item"        data-tab="ideas"        onclick="switchTab('ideas')"><span class="nav-icon">◎</span> Ideas</button>
+    <button class="nav-item"        data-tab="grabaciones"  onclick="switchTab('grabaciones')"><span class="nav-icon">◑</span> Grabaciones</button>
+    <button class="nav-item"        data-tab="informe"      onclick="switchTab('informe')"><span class="nav-icon">◫</span> Informe</button>
+    <button class="nav-item"        data-tab="configuracion" onclick="switchTab('configuracion')"><span class="nav-icon">◬</span> Configuración</button>
+  </nav>
+
+  <!-- Month selector -->
+  <div class="sidebar-month">
+    <label class="month-label">Mes activo</label>
+    <select class="month-select" id="monthSelect" onchange="onMonthChange()">
+      <option>Enero</option><option>Febrero</option><option>Marzo</option>
+      <option>Abril</option><option>Mayo</option><option>Junio</option>
+      <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+      <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+    </select>
+  </div>
+
+</aside>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════════════ -->
+<main class="main-content" id="mainContent">
+
+  <!-- ── TAB: DASHBOARD ── -->
+  <div class="tab-panel active" id="tab-dashboard">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="dashBrandName">Dashboard</h1>
+        <p class="page-subtitle" id="dashMonth"></p>
+      </div>
+      <button class="btn-primary" onclick="openNuevoContenido()">+ Nuevo contenido</button>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="dashboard-lower">
+      <div class="best-content-card" id="bestContentCard"></div>
+      <div class="charts-grid-2x2">
+        <div class="chart-card">
+          <h3 class="chart-title">Contenidos por estado</h3>
+          <canvas id="chartDonut" width="260" height="260"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">Publicaciones por plataforma</h3>
+          <canvas id="chartPlatforms" width="260" height="220"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">Top 5 por visualizaciones</h3>
+          <canvas id="chartTop5" width="260" height="220"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">Engagement promedio por plataforma</h3>
+          <canvas id="chartEngagement" width="260" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="compliance-section" id="dashCompliance"></div>
+  </div>
+
+  <!-- ── TAB: PARRILLA ── -->
+  <div class="tab-panel" id="tab-parrilla">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Parrilla de contenidos</h1>
+        <p class="page-subtitle" id="parrillaBrandMonth"></p>
+      </div>
+      <button class="btn-primary" onclick="openNuevoContenido()">+ Nuevo contenido</button>
+    </div>
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Mes</label>
+        <select id="filterMes" onchange="renderParrilla()">
+          <option value="">Todos</option>
+          <option>Enero</option><option>Febrero</option><option>Marzo</option>
+          <option>Abril</option><option>Mayo</option><option>Junio</option>
+          <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+          <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Estado</label>
+        <select id="filterEstado" onchange="renderParrilla()">
+          <option value="">Todos</option>
+          <option>Idea</option><option>Guion</option><option>Grabado</option>
+          <option>En edición</option><option>En aprobación</option>
+          <option>Aprobado</option><option>Publicado</option><option>No publicado</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select id="filterTipo" onchange="renderParrilla()">
+          <option value="">Todos</option>
+          <option>Reel</option><option>Carrusel</option><option>Historia</option><option>Post</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Plataforma</label>
+        <select id="filterPlataforma" onchange="renderParrilla()">
+          <option value="">Todas</option>
+          <option value="ig">Instagram</option>
+          <option value="tk">TikTok</option>
+          <option value="fb">Facebook</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table" id="parrillaTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Mes</th><th>Tipo</th><th>Tema / Idea</th><th>Objetivo</th>
+            <th>Estado</th><th>IG</th><th>TK</th><th>FB</th>
+            <th>Hook</th><th>CTA</th><th>Obs</th><th>F. Aprobación</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="parrillaBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: ESTADÍSTICAS ── -->
+  <div class="tab-panel" id="tab-estadisticas">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Estadísticas</h1>
+        <p class="page-subtitle" id="statsBrandMonth"></p>
+      </div>
+    </div>
+    <div class="stats-summary-grid" id="statsSummary"></div>
+    <div class="table-wrapper" style="margin-top:24px;">
+      <table class="data-table" id="statsTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Contenido</th><th>Tipo</th>
+            <th>IG Views</th><th>IG Eng%</th>
+            <th>TK Views</th><th>TK Eng%</th>
+            <th>FB Views</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+    <div class="charts-grid-2col" style="margin-top:32px;">
+      <div class="chart-card">
+        <h3 class="chart-title">Top contenidos por visualizaciones</h3>
+        <canvas id="chartStatsTop" width="340" height="240"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">Engagement por plataforma</h3>
+        <canvas id="chartStatsEng" width="340" height="240"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: FEED IG ── -->
+  <div class="tab-panel" id="tab-feed">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Feed Instagram</h1>
+        <p class="page-subtitle" id="feedBrandMonth"></p>
+      </div>
+      <div class="feed-header-actions">
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="btnGridView"  onclick="setFeedView('grid')">⊞ Grid View</button>
+          <button class="toggle-btn"        id="btnPhoneView" onclick="setFeedView('phone')">📱 Vista Celular</button>
+        </div>
+        <button class="btn-secondary" onclick="markFeedApproved()">Marcar feed aprobado</button>
+      </div>
+    </div>
+    <div class="feed-approval-bar" id="feedApprovalBar"></div>
+    <!-- Grid view -->
+    <div id="feedGridView">
+      <div class="feed-grid" id="feedGrid"></div>
+      <div class="feed-legend" id="feedLegend"></div>
+    </div>
+    <!-- Phone view -->
+    <div id="feedPhoneView" style="display:none;">
+      <div class="phone-mockup-wrap">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="ig-header">
+              <div class="ig-profile-pic" id="igProfilePic"></div>
+              <span class="ig-handle" id="igHandle">palpitare_ips</span>
+            </div>
+            <div class="feed-grid-phone" id="feedGridPhone"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: CONTRACTUAL ── -->
+  <div class="tab-panel" id="tab-contractual">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Seguimiento contractual</h1>
+        <p class="page-subtitle" id="contractBrandMonth"></p>
+      </div>
+    </div>
+    <div id="contractualContent"></div>
+  </div>
+
+  <!-- ── TAB: IDEAS ── -->
+  <div class="tab-panel" id="tab-ideas">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Banco de ideas</h1>
+        <p class="page-subtitle" id="ideasBrandMonth"></p>
+      </div>
+      <button class="btn-primary" onclick="openNuevaIdea()">+ Nueva idea</button>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table" id="ideasTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Idea</th><th>Hook</th><th>Categoría</th><th>Prioridad</th>
+            <th>Plataforma</th><th>Referencia</th><th>Estado</th>
+            <th>Fecha usada</th><th>¿Funcionó?</th><th>Métricas</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="ideasBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: GRABACIONES ── -->
+  <div class="tab-panel" id="tab-grabaciones">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Sesiones de grabación</h1>
+        <p class="page-subtitle" id="grabBrandMonth"></p>
+      </div>
+      <button class="btn-primary" onclick="openNuevaGrabacion()">+ Nueva sesión</button>
+    </div>
+    <div class="table-wrapper">
+      <table class="data-table" id="grabTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Fecha</th><th>Lugar</th><th>Persona</th>
+            <th>Videos</th><th>Tomas</th><th>Pendientes</th>
+            <th>Vestuario</th><th>Props</th><th>Estado edición</th>
+            <th>F. Entrega</th><th>Obs</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="grabBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB: INFORME ── -->
+  <div class="tab-panel" id="tab-informe">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Informe mensual</h1>
+        <p class="page-subtitle" id="informeBrandMonth"></p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn-primary"   onclick="generateInforme()">Generar informe</button>
+        <button class="btn-secondary" onclick="copyInforme()">Copiar</button>
+        <button class="btn-secondary" onclick="downloadInforme()">Descargar .txt</button>
+      </div>
+    </div>
+    <div id="informeContent"></div>
+  </div>
+
+  <!-- ── TAB: CONFIGURACIÓN ── -->
+  <div class="tab-panel" id="tab-configuracion">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Configuración de marca</h1>
+        <p class="page-subtitle" id="configBrandName"></p>
+      </div>
+    </div>
+    <div id="configuracionContent"></div>
+  </div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════
+     TOAST NOTIFICATION
+═══════════════════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════ -->
+
+<!-- Modal: Nuevo/Editar Contenido -->
+<div class="modal-overlay" id="modal-contenido">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalContenidoTitle">Nuevo contenido</h2>
+      <button class="modal-close" onclick="closeModal('modal-contenido')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="contenidoId" />
+      <div class="form-section">
+        <h3 class="form-section-title">Información general</h3>
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>Mes</label>
+            <select id="cMes">
+              <option>Enero</option><option>Febrero</option><option>Marzo</option>
+              <option>Abril</option><option>Mayo</option><option>Junio</option>
+              <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+              <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="cTipo">
+              <option>Reel</option><option>Carrusel</option><option>Historia</option><option>Post</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Objetivo</label>
+            <select id="cObjetivo">
+              <option>Educación</option><option>Autoridad</option>
+              <option>Conversión</option><option>Humanización</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tema / Idea</label>
+          <input type="text" id="cIdea" placeholder="Describe el tema del contenido..." />
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Hook</label>
+            <input type="text" id="cHook" placeholder="¿Qué engancha al inicio?" />
+          </div>
+          <div class="form-group">
+            <label>CTA</label>
+            <input type="text" id="cCta" placeholder="Llamada a la acción..." />
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="cEstado">
+              <option>Idea</option><option>Guion</option><option>Grabado</option>
+              <option>En edición</option><option>En aprobación</option>
+              <option>Aprobado</option><option>Publicado</option><option>No publicado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Aprobó cliente</label>
+            <select id="cClientAprobo">
+              <option value="">— Sin definir —</option>
+              <option>Sí</option><option>No</option><option>Pendiente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha aprobación</label>
+            <input type="date" id="cFechaAprobacion" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Observaciones</label>
+          <textarea id="cObs" rows="2" placeholder="Notas adicionales..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3 class="form-section-title">Publicación por plataforma</h3>
+        <div id="platformAccordions"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost"    onclick="closeModal('modal-contenido')">Cancelar</button>
+      <button class="btn-primary"  onclick="saveContenido()">Guardar contenido</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Stats -->
+<div class="modal-overlay" id="modal-stats">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2 class="modal-title" id="statsModalTitle">Estadísticas del contenido</h2>
+      <button class="modal-close" onclick="closeModal('modal-stats')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="statsContenidoId" />
+      <p class="stats-content-name" id="statsContenidoName"></p>
+      <div class="platform-tabs" id="statsPlatformTabs">
+        <button class="platform-tab active" data-plat="instagram" onclick="switchStatsPlatform('instagram')">Instagram</button>
+        <button class="platform-tab" data-plat="tiktok"    onclick="switchStatsPlatform('tiktok')">TikTok</button>
+        <button class="platform-tab" data-plat="facebook"  onclick="switchStatsPlatform('facebook')">Facebook</button>
+      </div>
+      <div id="statsFormArea"></div>
+      <div class="stats-engagement-box" id="statsEngagementBox"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost"   onclick="closeModal('modal-stats')">Cancelar</button>
+      <button class="btn-primary" onclick="saveStats()">Guardar stats</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Idea -->
+<div class="modal-overlay" id="modal-idea">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalIdeaTitle">Nueva idea</h2>
+      <button class="modal-close" onclick="closeModal('modal-idea')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ideaId" />
+      <div class="form-group">
+        <label>Idea / Tema</label>
+        <input type="text" id="iIdea" placeholder="Describe la idea..." />
+      </div>
+      <div class="form-group">
+        <label>Hook</label>
+        <input type="text" id="iHook" placeholder="¿Cómo enganchar?" />
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="iCategoria">
+            <option>Educación</option><option>Autoridad</option>
+            <option>Conversión</option><option>Humanización</option><option>Tendencia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridad</label>
+          <select id="iPrioridad">
+            <option>Alta</option><option>Media</option><option>Baja</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Plataforma</label>
+          <select id="iPlataforma">
+            <option>Instagram</option><option>TikTok</option>
+            <option>Facebook</option><option>Todas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="iEstado">
+            <option>Pendiente</option><option>En uso</option>
+            <option>Usada</option><option>Descartada</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Referencia (URL o descripción)</label>
+        <input type="text" id="iReferencia" placeholder="https://..." />
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Fecha usada</label>
+          <input type="date" id="iFechaUsada" />
+        </div>
+        <div class="form-group">
+          <label>¿Funcionó?</label>
+          <select id="iFunciono">
+            <option value="">— Sin evaluar —</option>
+            <option>Sí</option><option>No</option><option>Parcialmente</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Métricas obtenidas</label>
+        <textarea id="iMetricas" rows="2" placeholder="Ej: 20k views, 4.2% engagement..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost"   onclick="closeModal('modal-idea')">Cancelar</button>
+      <button class="btn-primary" onclick="saveIdea()">Guardar idea</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Grabación -->
+<div class="modal-overlay" id="modal-grabacion">
+  <div class="modal modal-large">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalGrabTitle">Nueva sesión de grabación</h2>
+      <button class="modal-close" onclick="closeModal('modal-grabacion')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="grabId" />
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="gFecha" />
+        </div>
+        <div class="form-group">
+          <label>Lugar</label>
+          <input type="text" id="gLugar" placeholder="Consultorio, estudio..." />
+        </div>
+        <div class="form-group">
+          <label>Persona(s)</label>
+          <input type="text" id="gPersona" placeholder="Dr. García, Paciente..." />
+        </div>
+      </div>
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Cantidad de videos</label>
+          <input type="number" id="gVideos" min="0" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Tomas totales</label>
+          <input type="number" id="gTomas" min="0" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Pendientes de grabar</label>
+          <input type="number" id="gPendientes" min="0" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Vestuario</label>
+          <input type="text" id="gVestuario" placeholder="Describe el atuendo..." />
+        </div>
+        <div class="form-group">
+          <label>Props / utilería</label>
+          <input type="text" id="gProps" placeholder="Materiales, elementos..." />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Estado de edición</label>
+          <select id="gEstadoEdicion">
+            <option>Sin editar</option><option>En edición</option>
+            <option>Editado</option><option>Entregado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha de entrega</label>
+          <input type="date" id="gFechaEntrega" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observaciones</label>
+        <textarea id="gObs" rows="2" placeholder="Notas de la sesión..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost"   onclick="closeModal('modal-grabacion')">Cancelar</button>
+      <button class="btn-primary" onclick="saveGrabacion()">Guardar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nueva/Editar Marca -->
+<div class="modal-overlay" id="modal-marca">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalMarcaTitle">Nueva marca</h2>
+      <button class="modal-close" onclick="closeModal('modal-marca')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="marcaId" />
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Nombre de marca</label>
+          <input type="text" id="mNombre" placeholder="Ej: Palpitare IPS" />
+        </div>
+        <div class="form-group">
+          <label>Sector / Industria</label>
+          <input type="text" id="mSector" placeholder="Ej: Salud cardiovascular" />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Color de marca</label>
+          <input type="color" id="mColor" value="#F45A00" />
+        </div>
+        <div class="form-group"></div>
+      </div>
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Handle Instagram</label>
+          <input type="text" id="mIgHandle" placeholder="@cuenta" />
+        </div>
+        <div class="form-group">
+          <label>Handle TikTok</label>
+          <input type="text" id="mTkHandle" placeholder="@cuenta" />
+        </div>
+        <div class="form-group">
+          <label>Página Facebook</label>
+          <input type="text" id="mFbHandle" placeholder="Nombre de página" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Plataformas activas</label>
+        <div class="checkboxes-row">
+          <label class="checkbox-label"><input type="checkbox" id="mPlatIg" value="instagram" /> Instagram</label>
+          <label class="checkbox-label"><input type="checkbox" id="mPlatTk" value="tiktok" /> TikTok</label>
+          <label class="checkbox-label"><input type="checkbox" id="mPlatFb" value="facebook" /> Facebook</label>
+          <label class="checkbox-label"><input type="checkbox" id="mPlatYt" value="youtube" /> YouTube</label>
+          <label class="checkbox-label"><input type="checkbox" id="mPlatLi" value="linkedin" /> LinkedIn</label>
+        </div>
+      </div>
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Mínimo publicaciones/mes</label>
+          <input type="number" id="mMinPub" min="1" value="8" />
+        </div>
+        <div class="form-group">
+          <label>Ideal publicaciones/mes</label>
+          <input type="number" id="mIdealPub" min="1" value="12" />
+        </div>
+        <div class="form-group">
+          <label>Meta historias/mes</label>
+          <input type="number" id="mHistMeta" min="1" value="12" />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Reunión mensual requerida</label>
+          <select id="mRequireMeeting">
+            <option value="true">Sí</option><option value="false">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reporte mensual requerido</label>
+          <select id="mRequireReport">
+            <option value="true">Sí</option><option value="false">No</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost"   onclick="closeModal('modal-marca')">Cancelar</button>
+      <button class="btn-primary" onclick="saveMarca()">Guardar marca</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmar -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 class="modal-title" id="confirmTitle">¿Confirmar acción?</h2>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="color:#2B2B2B;line-height:1.6;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost"   onclick="closeModal('modal-confirm')">Cancelar</button>
+      <button class="btn-danger"  id="confirmBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
