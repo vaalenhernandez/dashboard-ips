@@ -189,8 +189,8 @@ function mkBrand(id, nombre, sector, color, ig, tk, fb, plats, minPub, idealPub,
 // ── SEED DATA ────────────────────────────────────────────────
 function seedData() {
   const pal = mkBrand('pal','Palpitare IPS','Salud cardiovascular','#F45A00',
-    '@palpitare_ips','@palpitare_ips','Palpitare IPS',
-    ['instagram','tiktok','facebook'], 8, 12, 12);
+    '@palpitare_ips','@palpitare_ips','',
+    ['instagram','tiktok'], 8, 12, 12);
 
   const so = mkBrand('so','Sentido Óptico','Salud visual','#2F6B55',
     '@sentidooptico','@sentidooptico','Sentido Óptico',
@@ -253,8 +253,7 @@ function seedData() {
         ig_cuentas_interacciones: igLikes[i]||500,
         ig_seguidores_ganados: Math.floor(Math.random()*40)+5,
       },
-      tiktok: {},
-      facebook: {}
+      tiktok: {}
     };
     c.ig.publicado = 'Sí';
     c.ig.fecha = `2025-03-${String(i*2+1).padStart(2,'0')}`;
@@ -429,19 +428,24 @@ function execConfirm() {
 }
 
 // ── CANVAS CHARTS ─────────────────────────────────────────────
-function clearCanvas(id) {
+function setupCanvas(id) {
   const c = document.getElementById(id);
   if (!c) return null;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const W = c.offsetWidth || parseInt(c.getAttribute('width')) || 260;
+  const H = c.offsetHeight || parseInt(c.getAttribute('height')) || 220;
+  c.width  = W * dpr;
+  c.height = H * dpr;
   const ctx = c.getContext('2d');
-  ctx.clearRect(0,0,c.width,c.height);
-  return ctx;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  return { ctx, W, H };
 }
 
 function drawDonut(id, data, colors, labels) {
-  const ctx = clearCanvas(id);
-  if (!ctx) return;
-  const c = document.getElementById(id);
-  const W = c.width, H = c.height;
+  const setup = setupCanvas(id);
+  if (!setup) return;
+  const { ctx, W, H } = setup;
   const legendH = Math.min(labels.length, 7) * 20 + 12;
   const chartH   = H - legendH;
   const cx = W/2, cy = chartH/2;
@@ -511,10 +515,9 @@ function drawDonut(id, data, colors, labels) {
 }
 
 function drawVerticalBar(id, labels, values, color='#F45A00', maxVal) {
-  const ctx = clearCanvas(id);
-  if (!ctx) return;
-  const c = document.getElementById(id);
-  const W = c.width, H = c.height;
+  const setup = setupCanvas(id);
+  if (!setup) return;
+  const { ctx, W, H } = setup;
   const padL=36, padR=12, padT=24, padB=32;
   const chartW = W-padL-padR, chartH = H-padT-padB;
   const maxV = maxVal || Math.max(...values, 1);
@@ -585,10 +588,9 @@ function drawVerticalBar(id, labels, values, color='#F45A00', maxVal) {
 }
 
 function drawHorizontalBar(id, labels, values, color='#F45A00') {
-  const ctx = clearCanvas(id);
-  if (!ctx) return;
-  const c = document.getElementById(id);
-  const W = c.width, H = c.height;
+  const setup = setupCanvas(id);
+  if (!setup) return;
+  const { ctx, W, H } = setup;
   const labelW = 126;
   const padL = 8, padR = 64, padT = 6, padB = 6;
   const chartW = W - padL - labelW - padR;
@@ -653,26 +655,27 @@ function renderDashboard() {
   const grab   = cs.filter(c=>c.estado==='Grabado').length;
   const edic   = cs.filter(c=>c.estado==='En edición').length;
   const aprob  = cs.filter(c=>c.estado==='En aprobación').length;
-  const hist   = cs.filter(c=>c.tipo==='Historia').length;
   const reels  = cs.filter(c=>c.tipo==='Reel').length;
   const carr   = cs.filter(c=>c.tipo==='Carrusel').length;
+  const grabSessions = (b.grabaciones||[]).length;
+  const grabVideos   = (b.grabaciones||[]).reduce((a,g)=>a+(+g.videos||0),0);
 
   // KPI cards
   const kpis = [
-    { label:'Total',        val:total, icon:'◉', color:'#F45A00' },
-    { label:'Publicados',   val:pub,   icon:'✓',  color:'#27AE60' },
-    { label:'Grabados',     val:grab,  icon:'◑',  color:'#8E44AD' },
-    { label:'En edición',   val:edic,  icon:'✏',  color:'#E67E22' },
-    { label:'En aprobación',val:aprob, icon:'⏳', color:'#2980B9' },
-    { label:'Reels',        val:reels, icon:'▶',  color:'#F45A00' },
-    { label:'Carruseles',   val:carr,  icon:'⊞',  color:'#16A085' },
-    { label:'Historias',    val:hist,  icon:'○',  color:'#C0392B' },
+    { label:'Total planeados', val:total, icon:'◉', color:'#F45A00' },
+    { label:'Publicados',      val:pub,   icon:'✓',  color:'#27AE60' },
+    { label:'Grabados',        val:grab,  icon:'◑',  color:'#8E44AD' },
+    { label:'En edición',      val:edic,  icon:'✏',  color:'#E67E22' },
+    { label:'En aprobación',   val:aprob, icon:'⏳', color:'#2980B9' },
+    { label:'Reels',           val:reels, icon:'▶',  color:'#F45A00' },
+    { label:'Sesiones grab.',  val:grabSessions, icon:'🎬', color:'#0EA5E9' },
+    { label:'Videos grabados', val:grabVideos,   icon:'📹', color:'#6366F1' },
   ];
   document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
     <div class="kpi-card" style="--kpi-color:${k.color}">
       <div class="kpi-card-top">
         <span class="kpi-icon-label">${k.icon}</span>
-        <div class="kpi-icon-box" style="background:${k.color};opacity:0.15;border-radius:9px;width:34px;height:34px;"></div>
+        <div class="kpi-icon-box" style="background:${k.color};opacity:0.12;border-radius:9px;width:32px;height:32px;"></div>
       </div>
       <div class="kpi-value">${k.val}</div>
       <div class="kpi-label">${k.label}</div>
@@ -691,26 +694,26 @@ function renderDashboard() {
   if (best) {
     const eng = calcEngagement(statsMap[best.id]?.instagram,'instagram');
     bcard.innerHTML = `
-      <div class="best-content-label">⭐ Mejor contenido del mes</div>
-      <div class="best-content-idea">${best.idea}</div>
-      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;">
-        <div>
-          <div class="best-content-stat">${bestViews.toLocaleString()}</div>
-          <div class="best-content-label">visualizaciones</div>
+      <div class="best-label-pill">⭐ Mejor contenido — ${m}</div>
+      <div class="best-idea-text">${best.idea}</div>
+      <div class="best-metrics-row">
+        <div class="best-metric">
+          <div class="best-metric-val">${bestViews.toLocaleString()}</div>
+          <div class="best-metric-lbl">visualizaciones</div>
         </div>
-        ${eng?`<div>
-          <div class="best-content-stat">${eng}%</div>
-          <div class="best-content-label">engagement</div>
+        ${eng?`<div class="best-metric">
+          <div class="best-metric-val">${eng}%</div>
+          <div class="best-metric-lbl">engagement</div>
         </div>`:''}
-      </div>
-      <div style="margin-top:14px;display:flex;gap:8px;">
-        <span style="background:rgba(255,255,255,0.15);color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${best.tipo}</span>
-        <span style="background:rgba(255,255,255,0.15);color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${best.mes}</span>
+        <div class="best-metric">
+          <div class="best-metric-val">${best.tipo}</div>
+          <div class="best-metric-lbl">formato</div>
+        </div>
       </div>`;
   } else {
     bcard.innerHTML = `
-      <div class="best-content-label">⭐ Mejor contenido del mes</div>
-      <p style="color:rgba(255,255,255,0.5);font-size:14px;margin-top:12px;">Sin estadísticas registradas para este mes.</p>`;
+      <div class="best-label-pill">⭐ Mejor contenido — ${m}</div>
+      <p class="best-empty">Agrega estadísticas al contenido publicado para ver el top.</p>`;
   }
 
   // Charts
@@ -722,8 +725,7 @@ function renderDashboard() {
   // platforms bar
   const igPub = cs.filter(c=>c.ig?.publicado==='Sí').length;
   const tkPub = cs.filter(c=>c.tk?.publicado==='Sí').length;
-  const fbPub = cs.filter(c=>c.fb?.publicado==='Sí').length;
-  drawVerticalBar('chartPlatforms',['Instagram','TikTok','Facebook'],[igPub,tkPub,fbPub],'#F45A00',b.idealPub);
+  drawVerticalBar('chartPlatforms',['Instagram','TikTok'],[igPub,tkPub],'#F45A00',b.idealPub);
 
   // Top5 views
   const pubCs = cs.filter(c=>c.estado==='Publicado' && statsMap[c.id]?.instagram?.ig_visualizaciones)
@@ -742,34 +744,40 @@ function renderDashboard() {
     }).filter(v=>v!==null).map(Number);
     return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
   };
-  drawVerticalBar('chartEngagement',['Instagram','TikTok','Facebook'],
-    [+avgEng('instagram'),+avgEng('tiktok'),+avgEng('facebook')],'#F45A00',10);
+  drawVerticalBar('chartEngagement',['Instagram','TikTok'],
+    [+avgEng('instagram'),+avgEng('tiktok')],'#FFA15C',10);
 
-  // Compliance
-  const cc = b.contractual[m] || {};
-  const pts = Math.min(100, Math.round((pub/b.idealPub)*60) + (cc.reunion?20:0) + (cc.reporte?20:0));
-  const color = pts>=80?'#27AE60':pts>=50?'#E67E22':'#E74C3C';
+  // Compliance — based only on publications ratio
+  const pts = Math.min(100, total > 0 ? Math.round((pub / total) * 100) : 0);
+  const compColor = pts>=80?'#27AE60':pts>=50?'#E67E22':'#E74C3C';
   document.getElementById('dashCompliance').innerHTML = `
-    <div style="background:#fff;border-radius:14px;padding:22px 26px;box-shadow:0 2px 16px rgba(74,29,5,0.08);border:1px solid rgba(215,194,168,0.25);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <span style="font-family:'Instrument Serif',serif;font-size:18px;color:#4A1D05;">Cumplimiento del mes</span>
-        <span style="font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;color:${color};">${pts}%</span>
-      </div>
-      <div style="height:10px;background:#F8F5EF;border-radius:8px;overflow:hidden;margin-bottom:16px;">
-        <div style="height:100%;width:${pts}%;background:linear-gradient(90deg,${color},${color}CC);border-radius:8px;transition:width .6s ease;"></div>
-      </div>
-      <div style="display:flex;gap:0;border-top:1px solid #F8F5EF;padding-top:14px;">
-        <div style="flex:1;text-align:center;border-right:1px solid #F8F5EF;">
-          <div style="font-family:'Instrument Serif',serif;font-size:28px;color:#4A1D05;">${pub}<span style="font-size:16px;color:#aaa;">/${b.idealPub}</span></div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9B8577;">Publicaciones</div>
+    <div class="compliance-card">
+      <div class="compliance-header">
+        <div>
+          <div class="compliance-title">Cumplimiento del mes</div>
+          <div class="compliance-sub">${pub} publicados de ${total} planeados en ${m}</div>
         </div>
-        <div style="flex:1;text-align:center;border-right:1px solid #F8F5EF;">
-          <div style="font-size:26px;">${cc.reunion?'✅':'❌'}</div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9B8577;">Reunión</div>
+        <div class="compliance-pct" style="color:${compColor};">${pts}%</div>
+      </div>
+      <div class="compliance-bar-track">
+        <div class="compliance-bar-fill" style="width:${pts}%;background:${compColor};"></div>
+      </div>
+      <div class="compliance-stats-row">
+        <div class="compliance-stat">
+          <div class="compliance-stat-val" style="color:${compColor};">${pub}<span class="compliance-stat-of">/${total}</span></div>
+          <div class="compliance-stat-lbl">Publicaciones</div>
         </div>
-        <div style="flex:1;text-align:center;">
-          <div style="font-size:26px;">${cc.reporte?'✅':'❌'}</div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9B8577;">Reporte</div>
+        <div class="compliance-stat">
+          <div class="compliance-stat-val">${grab}</div>
+          <div class="compliance-stat-lbl">Grabados</div>
+        </div>
+        <div class="compliance-stat">
+          <div class="compliance-stat-val">${edic}</div>
+          <div class="compliance-stat-lbl">En edición</div>
+        </div>
+        <div class="compliance-stat">
+          <div class="compliance-stat-val">${total - pub - grab - edic - aprob > 0 ? total - pub - grab - edic - aprob : 0}</div>
+          <div class="compliance-stat-lbl">Pendientes</div>
         </div>
       </div>
     </div>`;
@@ -793,10 +801,12 @@ function renderParrilla() {
 
   const tbody = document.getElementById('parrillaBody');
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:40px;color:#aaa;">Sin contenidos con esos filtros.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:40px;color:#aaa;">Sin contenidos con esos filtros.</td></tr>`;
     return;
   }
-  tbody.innerHTML = data.map((c,i) => `
+  tbody.innerHTML = data.map((c,i) => {
+    const fechaPub = c.ig?.fecha || c.tk?.fecha || '';
+    return `
     <tr>
       <td>${i+1}</td>
       <td>${c.mes}</td>
@@ -806,20 +816,20 @@ function renderParrilla() {
       <td>${estadoBadge(c.estado)}</td>
       <td>${platCell(c,'ig')}</td>
       <td>${platCell(c,'tk')}</td>
-      <td>${platCell(c,'fb')}</td>
       <td title="${c.hook}">${trunc(c.hook,25)}</td>
       <td title="${c.cta}">${trunc(c.cta,20)}</td>
       <td title="${c.obs}">${trunc(c.obs,20)}</td>
-      <td>${fmt(c.fechaAprobacion)}</td>
+      <td>${fmt(fechaPub)}</td>
       <td>
         <div class="actions-cell">
           <button class="btn-action btn-view"  onclick="viewContenido('${c.id}')"  title="Ver">👁</button>
           <button class="btn-action btn-edit"  onclick="openEditContenido('${c.id}')" title="Editar">✏</button>
-          <button class="btn-action btn-stats" onclick="openStatsModal('${c.id}')" title="Estadísticas">📊</button>
+          <button class="btn-action btn-stats" onclick="openStatsModal('${c.id}')" title="Stats">📊</button>
           <button class="btn-action btn-del"   onclick="deleteContenido('${c.id}')" title="Eliminar">🗑</button>
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 function platCell(c, plat) {
@@ -945,6 +955,7 @@ function saveContenido() {
   closeModal('modal-contenido');
   renderParrilla();
   renderDashboard();
+  renderEstadisticas();
 }
 
 function deleteContenido(id) {
@@ -953,7 +964,7 @@ function deleteContenido(id) {
     b.contenidos = b.contenidos.filter(c=>c.id!==id);
     delete b.stats[id];
     b.feed.order = b.feed.order.filter(x=>x!==id);
-    save(); renderParrilla(); renderDashboard();
+    save(); renderParrilla(); renderDashboard(); renderEstadisticas();
     showToast('Contenido eliminado','error');
   });
 }
@@ -972,12 +983,15 @@ function renderEstadisticas() {
     return vals.length?((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)):0;
   };
   const totalViews = cs.reduce((a,c)=>a+(+(sm[c.id]?.instagram?.ig_visualizaciones||0)),0);
+  const totalTkViews = cs.reduce((a,c)=>a+(+(sm[c.id]?.tiktok?.tk_visualizaciones||0)),0);
+  const grabSessions = (b.grabaciones||[]).length;
   document.getElementById('statsSummary').innerHTML = `
-    <div class="kpi-card"><div class="kpi-val">${cs.length}</div><div class="kpi-label">Publicados</div></div>
-    <div class="kpi-card"><div class="kpi-val">${totalViews.toLocaleString()}</div><div class="kpi-label">Views IG total</div></div>
-    <div class="kpi-card"><div class="kpi-val">${avgEng('instagram')}%</div><div class="kpi-label">Eng. prom. IG</div></div>
-    <div class="kpi-card"><div class="kpi-val">${avgEng('tiktok')}%</div><div class="kpi-label">Eng. prom. TK</div></div>
-    <div class="kpi-card"><div class="kpi-val">${avgEng('facebook')}%</div><div class="kpi-label">Eng. prom. FB</div></div>`;
+    <div class="kpi-card" style="--kpi-color:#27AE60"><div class="kpi-value">${cs.length}</div><div class="kpi-label">Publicados</div></div>
+    <div class="kpi-card" style="--kpi-color:#F45A00"><div class="kpi-value">${totalViews.toLocaleString()}</div><div class="kpi-label">Views IG total</div></div>
+    <div class="kpi-card" style="--kpi-color:#F45A00"><div class="kpi-value">${avgEng('instagram')}%</div><div class="kpi-label">Eng. prom. IG</div></div>
+    <div class="kpi-card" style="--kpi-color:#0EA5E9"><div class="kpi-value">${totalTkViews.toLocaleString()}</div><div class="kpi-label">Views TK total</div></div>
+    <div class="kpi-card" style="--kpi-color:#0EA5E9"><div class="kpi-value">${avgEng('tiktok')}%</div><div class="kpi-label">Eng. prom. TK</div></div>
+    <div class="kpi-card" style="--kpi-color:#6366F1"><div class="kpi-value">${grabSessions}</div><div class="kpi-label">Sesiones grab.</div></div>`;
 
   // table
   const tbody = document.getElementById('statsBody');
@@ -990,7 +1004,6 @@ function renderEstadisticas() {
       const igE  = calcEngagement(s.instagram,'instagram');
       const tkV  = s.tiktok?.tk_visualizaciones||'—';
       const tkE  = calcEngagement(s.tiktok,'tiktok');
-      const fbV  = s.facebook?.fb_alcance||'—';
       return `<tr>
         <td>${i+1}</td>
         <td title="${c.idea}">${trunc(c.idea,30)}</td>
@@ -999,7 +1012,6 @@ function renderEstadisticas() {
         <td>${igE?igE+'%':'—'}</td>
         <td>${typeof tkV==='number'?tkV.toLocaleString():tkV}</td>
         <td>${tkE?tkE+'%':'—'}</td>
-        <td>${typeof fbV==='number'?fbV.toLocaleString():fbV}</td>
         <td><button class="btn-action btn-stats" onclick="openStatsModal('${c.id}')">✏ Stats</button></td>
       </tr>`;
     }).join('');
@@ -1011,8 +1023,8 @@ function renderEstadisticas() {
   drawHorizontalBar('chartStatsTop',
     top5.map(c=>trunc(c.idea,18)),
     top5.map(c=>+(sm[c.id]?.instagram?.ig_visualizaciones||0)),'#F45A00');
-  drawVerticalBar('chartStatsEng',['IG','TK','FB'],
-    [+avgEng('instagram'),+avgEng('tiktok'),+avgEng('facebook')],'#FFA15C',15);
+  drawVerticalBar('chartStatsEng',['IG','TK'],
+    [+avgEng('instagram'),+avgEng('tiktok')],'#FFA15C',15);
 }
 
 function openStatsModal(contenidoId) {
@@ -1079,9 +1091,8 @@ function saveStats() {
   save();
   closeModal('modal-stats');
   showToast('Estadísticas guardadas ✓');
-  const active = document.querySelector('.nav-item.active');
-  if (active?.dataset.tab==='estadisticas') renderEstadisticas();
-  if (active?.dataset.tab==='dashboard') renderDashboard();
+  renderDashboard();
+  renderEstadisticas();
 }
 
 // ── FEED IG ───────────────────────────────────────────────────
@@ -1409,13 +1420,13 @@ function saveGrabacion() {
     showToast('Grabación registrada ✓');
   }
   _editingId=null;
-  save(); closeModal('modal-grabacion'); renderGrabaciones();
+  save(); closeModal('modal-grabacion'); renderGrabaciones(); renderDashboard(); renderEstadisticas();
 }
 
 function deleteGrabacion(id) {
   confirmAction('¿Eliminar grabación?','',()=>{
     const b=currentBrand(); b.grabaciones=b.grabaciones.filter(x=>x.id!==id);
-    save(); renderGrabaciones(); showToast('Eliminada','error');
+    save(); renderGrabaciones(); renderDashboard(); renderEstadisticas(); showToast('Eliminada','error');
   });
 }
 
