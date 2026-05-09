@@ -339,38 +339,62 @@ html, body {
 ═══════════════════════════════════════════════ */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
   margin-bottom: 28px;
 }
 .kpi-card {
   background: var(--blanco);
   border-radius: var(--r-card);
-  padding: 20px 20px 18px;
+  padding: 18px 18px 16px;
   box-shadow: var(--shadow);
-  border: 1px solid rgba(215,194,168,0.3);
+  border: 1px solid rgba(215,194,168,0.25);
+  border-left: 4px solid var(--kpi-color, var(--naranja));
   transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle at top right, var(--kpi-color, var(--naranja)), transparent 70%);
+  opacity: 0.07;
+  pointer-events: none;
 }
 .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.kpi-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.kpi-icon-box {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: var(--kpi-color, var(--naranja));
+  opacity: 0.12;
+}
 .kpi-label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
   color: var(--texto-m);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .kpi-value {
   font-family: 'Instrument Serif', serif;
-  font-size: 34px;
+  font-size: 40px;
   color: var(--cafe);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
-.kpi-sub {
-  font-size: 11px;
-  color: var(--beige);
-  font-weight: 500;
+.kpi-icon-label {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--kpi-color, var(--naranja));
 }
 .kpi-card.accent .kpi-value { color: var(--naranja); }
 .kpi-card.success .kpi-value { color: #27AE60; }
@@ -390,34 +414,45 @@ html, body {
 }
 
 .best-content-card {
-  background: var(--blanco);
+  background: linear-gradient(135deg, var(--cafe) 0%, #6B2D0A 100%);
   border-radius: var(--r-card);
-  padding: 24px;
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(215,194,168,0.3);
+  padding: 26px;
+  box-shadow: 0 8px 32px rgba(74,29,5,0.25);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.best-content-card::before {
+  content: '⭐';
+  position: absolute;
+  top: -10px; right: -10px;
+  font-size: 80px;
+  opacity: 0.07;
+  pointer-events: none;
 }
 .best-content-card h3 {
   font-family: 'Instrument Serif', serif;
   font-size: 17px;
-  color: var(--cafe);
+  color: rgba(255,255,255,0.85);
   margin-bottom: 16px;
   font-weight: 400;
 }
 .best-content-idea {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--texto);
-  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
   line-height: 1.4;
 }
 .best-content-stat {
-  font-size: 28px;
+  font-size: 36px;
   font-family: 'Instrument Serif', serif;
-  color: var(--naranja);
-  margin-bottom: 4px;
+  color: var(--naranja-s);
+  margin-bottom: 2px;
+  line-height: 1;
 }
-.best-content-label { font-size: 11px; color: var(--texto-m); }
-.best-content-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.best-content-label { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.best-content-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
 
 /* Charts grid */
 .charts-grid-2x2 {
@@ -441,20 +476,23 @@ html, body {
 .chart-card {
   background: var(--blanco);
   border-radius: var(--r-card);
-  padding: 20px;
+  padding: 22px 22px 18px;
   box-shadow: var(--shadow);
-  border: 1px solid rgba(215,194,168,0.3);
+  border: 1px solid rgba(215,194,168,0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .chart-title {
   font-family: 'Instrument Serif', serif;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--cafe);
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   font-weight: 400;
   align-self: flex-start;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--marfil);
+  width: 100%;
 }
 .chart-card canvas { max-width: 100%; height: auto; }
 

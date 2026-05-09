@@ -478,45 +478,124 @@ function drawVerticalBar(id, labels, values, color='#F45A00', maxVal) {
   const ctx = clearCanvas(id);
   if (!ctx) return;
   const c = document.getElementById(id);
-  const W=c.width, H=c.height, pad=36, top=20, barW=Math.max(24,Math.floor((W-pad*2)/Math.max(labels.length,1)-8));
-  const maxV = maxVal || Math.max(...values,1);
-  const chartH = H-pad-top;
-  ctx.fillStyle='#f5f5f5'; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=1;
-  [0,.25,.5,.75,1].forEach(pct => {
-    const y=top+chartH*(1-pct);
-    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-8,y); ctx.stroke();
-    ctx.fillStyle='#aaa'; ctx.font='9px Plus Jakarta Sans'; ctx.textAlign='right';
-    ctx.fillText(Math.round(maxV*pct), pad-4, y+3);
-  });
+  const dpr = window.devicePixelRatio || 1;
+  const W = c.width, H = c.height;
+  const padL=40, padR=12, padT=28, padB=36;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const maxV = maxVal || Math.max(...values, 1);
+  const n = labels.length;
+  const groupW = chartW / Math.max(n,1);
+  const barW = Math.min(groupW*0.55, 44);
+
+  // bg
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // grid lines
+  const steps = 4;
+  for (let s=0; s<=steps; s++) {
+    const pct = s/steps;
+    const y = padT + chartH*(1-pct);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y);
+    ctx.strokeStyle = s===0 ? 'rgba(74,29,5,0.15)' : 'rgba(74,29,5,0.06)';
+    ctx.lineWidth=1; ctx.stroke();
+    const val = Math.round(maxV*pct);
+    ctx.fillStyle='#999'; ctx.font='9px Plus Jakarta Sans';
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(val, padL-5, y);
+  }
+
   labels.forEach((lbl,i) => {
-    const x = pad + i*(barW+8) + 8;
-    const bH = (values[i]/maxV)*chartH;
-    const y = top+chartH-bH;
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, barW, bH);
-    ctx.fillStyle='#444'; ctx.font='9px Plus Jakarta Sans'; ctx.textAlign='center';
-    ctx.fillText(trunc(lbl,6), x+barW/2, H-8);
-    ctx.fillStyle='#222'; ctx.font='bold 10px Plus Jakarta Sans';
-    ctx.fillText(values[i], x+barW/2, y-4);
+    const cx = padL + groupW*i + groupW/2;
+    const x  = cx - barW/2;
+    const bH = Math.max(2, (values[i]/maxV)*chartH);
+    const y  = padT + chartH - bH;
+
+    // bar gradient
+    const grad = ctx.createLinearGradient(x, y, x, y+bH);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color+'99');
+    ctx.fillStyle = grad;
+    // rounded top
+    const r = Math.min(6, barW/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+barW-r, y);
+    ctx.quadraticCurveTo(x+barW, y, x+barW, y+r);
+    ctx.lineTo(x+barW, y+bH);
+    ctx.lineTo(x, y+bH);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+    ctx.fill();
+
+    // value on top
+    ctx.fillStyle='#333'; ctx.font='bold 11px Plus Jakarta Sans';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(values[i], cx, y-3);
+
+    // label below
+    ctx.fillStyle='#777'; ctx.font='10px Plus Jakarta Sans';
+    ctx.textBaseline='top';
+    ctx.fillText(trunc(lbl,7), cx, padT+chartH+6);
   });
 }
 
-function drawHorizontalBar(id, labels, values, color='#FFA15C') {
+function drawHorizontalBar(id, labels, values, color='#F45A00') {
   const ctx = clearCanvas(id);
   if (!ctx) return;
   const c = document.getElementById(id);
-  const W=c.width, H=c.height, pad=120, rowH=Math.floor((H-20)/Math.max(labels.length,1));
-  const maxV = Math.max(...values,1);
-  ctx.fillStyle='#f5f5f5'; ctx.fillRect(0,0,W,H);
+  const W=c.width, H=c.height;
+  const padL=8, padR=60, padT=8, padB=8;
+  const labelW = 130;
+  const chartW = W - padL - labelW - padR;
+  const n = Math.max(labels.length,1);
+  const rowH = (H - padT - padB) / n;
+  const maxV = Math.max(...values, 1);
+
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
   labels.forEach((lbl,i) => {
-    const y=20+i*rowH;
-    const bW=((values[i]||0)/maxV)*(W-pad-20);
-    ctx.fillStyle=color; ctx.fillRect(pad, y+4, bW, rowH-10);
-    ctx.fillStyle='#444'; ctx.font='11px Plus Jakarta Sans'; ctx.textAlign='right';
-    ctx.fillText(trunc(lbl,16), pad-6, y+rowH/2+4);
-    ctx.fillStyle='#222'; ctx.font='bold 10px Plus Jakarta Sans'; ctx.textAlign='left';
-    ctx.fillText(values[i]?.toLocaleString?.()??values[i], pad+bW+6, y+rowH/2+4);
+    const y = padT + i*rowH;
+    const bH = Math.max(rowH*0.45, 10);
+    const by = y + (rowH-bH)/2;
+    const bW = Math.max(4, (values[i]||0)/maxV * chartW);
+    const bx = padL + labelW;
+
+    // bar bg track
+    ctx.fillStyle='#F8F5EF';
+    const r = bH/2;
+    ctx.beginPath();
+    ctx.moveTo(bx+r, by); ctx.lineTo(bx+chartW-r, by);
+    ctx.quadraticCurveTo(bx+chartW, by, bx+chartW, by+r);
+    ctx.lineTo(bx+chartW, by+bH-r);
+    ctx.quadraticCurveTo(bx+chartW, by+bH, bx+chartW-r, by+bH);
+    ctx.lineTo(bx+r, by+bH); ctx.quadraticCurveTo(bx, by+bH, bx, by+bH-r);
+    ctx.lineTo(bx, by+r); ctx.quadraticCurveTo(bx, by, bx+r, by);
+    ctx.closePath(); ctx.fill();
+
+    // bar fill gradient
+    const grad = ctx.createLinearGradient(bx, 0, bx+bW, 0);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, color+'BB');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(bx+r, by); ctx.lineTo(bx+bW-r, by);
+    ctx.quadraticCurveTo(bx+bW, by, bx+bW, by+r);
+    ctx.lineTo(bx+bW, by+bH-r);
+    ctx.quadraticCurveTo(bx+bW, by+bH, bx+bW-r, by+bH);
+    ctx.lineTo(bx+r, by+bH); ctx.quadraticCurveTo(bx, by+bH, bx, by+bH-r);
+    ctx.lineTo(bx, by+r); ctx.quadraticCurveTo(bx, by, bx+r, by);
+    ctx.closePath(); ctx.fill();
+
+    // label
+    ctx.fillStyle='#4A1D05'; ctx.font='600 11px Plus Jakarta Sans';
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(trunc(lbl,17), padL+labelW-8, y+rowH/2);
+
+    // value
+    ctx.fillStyle='#555'; ctx.font='bold 11px Plus Jakarta Sans';
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText((values[i]||0).toLocaleString(), bx+bW+8, y+rowH/2);
   });
 }
 
@@ -539,18 +618,21 @@ function renderDashboard() {
 
   // KPI cards
   const kpis = [
-    { label:'Total contenidos', val:total,  icon:'◉', color:'var(--naranja)' },
-    { label:'Publicados',        val:pub,    icon:'✓',  color:'#27AE60' },
-    { label:'Grabados',          val:grab,   icon:'◑',  color:'#8E44AD' },
-    { label:'En edición',        val:edic,   icon:'✏',  color:'#E67E22' },
-    { label:'En aprobación',     val:aprob,  icon:'⏳', color:'#2980B9' },
-    { label:'Reels',             val:reels,  icon:'▶',  color:'var(--naranja-s)' },
-    { label:'Carruseles',        val:carr,   icon:'⊞',  color:'#16A085' },
-    { label:'Historias',         val:hist,   icon:'○',  color:'#C0392B' },
+    { label:'Total',        val:total, icon:'◉', color:'#F45A00' },
+    { label:'Publicados',   val:pub,   icon:'✓',  color:'#27AE60' },
+    { label:'Grabados',     val:grab,  icon:'◑',  color:'#8E44AD' },
+    { label:'En edición',   val:edic,  icon:'✏',  color:'#E67E22' },
+    { label:'En aprobación',val:aprob, icon:'⏳', color:'#2980B9' },
+    { label:'Reels',        val:reels, icon:'▶',  color:'#F45A00' },
+    { label:'Carruseles',   val:carr,  icon:'⊞',  color:'#16A085' },
+    { label:'Historias',    val:hist,  icon:'○',  color:'#C0392B' },
   ];
   document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
-    <div class="kpi-card">
-      <div style="color:${k.color};font-size:20px;margin-bottom:6px;">${k.icon}</div>
+    <div class="kpi-card" style="--kpi-color:${k.color}">
+      <div class="kpi-card-top">
+        <span class="kpi-icon-label">${k.icon}</span>
+        <div class="kpi-icon-box" style="background:${k.color};opacity:0.15;border-radius:9px;width:34px;height:34px;"></div>
+      </div>
       <div class="kpi-value">${k.val}</div>
       <div class="kpi-label">${k.label}</div>
     </div>
@@ -569,14 +651,25 @@ function renderDashboard() {
     const eng = calcEngagement(statsMap[best.id]?.instagram,'instagram');
     bcard.innerHTML = `
       <div class="best-content-label">⭐ Mejor contenido del mes</div>
-      <div class="best-content-title">${best.idea}</div>
-      <div class="best-content-stats">
-        <span>${bestViews.toLocaleString()} views</span>
-        ${eng?`<span>${eng}% eng.</span>`:''}
-        <span>${best.tipo}</span>
+      <div class="best-content-idea">${best.idea}</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px;">
+        <div>
+          <div class="best-content-stat">${bestViews.toLocaleString()}</div>
+          <div class="best-content-label">visualizaciones</div>
+        </div>
+        ${eng?`<div>
+          <div class="best-content-stat">${eng}%</div>
+          <div class="best-content-label">engagement</div>
+        </div>`:''}
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;">
+        <span style="background:rgba(255,255,255,0.15);color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${best.tipo}</span>
+        <span style="background:rgba(255,255,255,0.15);color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${best.mes}</span>
       </div>`;
   } else {
-    bcard.innerHTML = `<div class="best-content-label">⭐ Mejor contenido</div><p style="color:#999;font-size:14px;margin-top:8px;">Sin estadísticas para este mes.</p>`;
+    bcard.innerHTML = `
+      <div class="best-content-label">⭐ Mejor contenido del mes</div>
+      <p style="color:rgba(255,255,255,0.5);font-size:14px;margin-top:12px;">Sin estadísticas registradas para este mes.</p>`;
   }
 
   // Charts
@@ -616,18 +709,27 @@ function renderDashboard() {
   const pts = Math.min(100, Math.round((pub/b.idealPub)*60) + (cc.reunion?20:0) + (cc.reporte?20:0));
   const color = pts>=80?'#27AE60':pts>=50?'#E67E22':'#E74C3C';
   document.getElementById('dashCompliance').innerHTML = `
-    <div class="compliance-bar-wrap">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <strong>Cumplimiento del mes</strong>
-        <span style="font-size:20px;font-weight:700;color:${color};">${pts}%</span>
+    <div style="background:#fff;border-radius:14px;padding:22px 26px;box-shadow:0 2px 16px rgba(74,29,5,0.08);border:1px solid rgba(215,194,168,0.25);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-family:'Instrument Serif',serif;font-size:18px;color:#4A1D05;">Cumplimiento del mes</span>
+        <span style="font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;color:${color};">${pts}%</span>
       </div>
-      <div style="height:12px;background:#eee;border-radius:8px;overflow:hidden;">
-        <div style="height:100%;width:${pts}%;background:${color};border-radius:8px;transition:width .5s;"></div>
+      <div style="height:10px;background:#F8F5EF;border-radius:8px;overflow:hidden;margin-bottom:16px;">
+        <div style="height:100%;width:${pts}%;background:linear-gradient(90deg,${color},${color}CC);border-radius:8px;transition:width .6s ease;"></div>
       </div>
-      <div style="display:flex;gap:24px;margin-top:12px;font-size:13px;">
-        <span>${pub}/${b.idealPub} publicaciones</span>
-        <span>Reunión: ${cc.reunion?'✅':'❌'}</span>
-        <span>Reporte: ${cc.reporte?'✅':'❌'}</span>
+      <div style="display:flex;gap:0;border-top:1px solid #F8F5EF;padding-top:14px;">
+        <div style="flex:1;text-align:center;border-right:1px solid #F8F5EF;">
+          <div style="font-family:'Instrument Serif',serif;font-size:28px;color:#4A1D05;">${pub}<span style="font-size:16px;color:#aaa;">/${b.idealPub}</span></div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9B8577;">Publicaciones</div>
+        </div>
+        <div style="flex:1;text-align:center;border-right:1px solid #F8F5EF;">
+          <div style="font-size:26px;">${cc.reunion?'✅':'❌'}</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9B8577;">Reunión</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div style="font-size:26px;">${cc.reporte?'✅':'❌'}</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9B8577;">Reporte</div>
+        </div>
       </div>
     </div>`;
 }
