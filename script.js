@@ -156,8 +156,29 @@ function save() {
 function load() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw) {
-    try { state = JSON.parse(raw); }
-    catch(e) { seedData(); }
+    try {
+      state = JSON.parse(raw);
+      // Defensive migration: ensure every brand has all required fields
+      // so old saved data works with any new code version
+      Object.values(state.brands || {}).forEach(b => {
+        if (!Array.isArray(b.contenidos))  b.contenidos  = [];
+        if (!Array.isArray(b.ideas))       b.ideas       = [];
+        if (!Array.isArray(b.grabaciones)) b.grabaciones = [];
+        if (!b.stats)       b.stats       = {};
+        if (!b.contractual) b.contractual = {};
+        if (!b.feed)        b.feed        = { order: [], approved: false, approvedDate: '' };
+        if (!Array.isArray(b.plataformas)) b.plataformas = ['instagram'];
+        // Per-contenido: ensure platform sub-objects exist
+        b.contenidos.forEach(c => {
+          if (!c.ig) c.ig = { publicado: 'No', fecha: '', link: '' };
+          if (!c.tk) c.tk = { publicado: 'No', fecha: '', link: '' };
+          if (!c.fb) c.fb = { publicado: 'No', fecha: '', link: '' };
+        });
+      });
+      if (!state.currentBrand && Object.keys(state.brands || {}).length)
+        state.currentBrand = Object.keys(state.brands)[0];
+      if (!state.currentMonth) state.currentMonth = 'Marzo';
+    } catch(e) { seedData(); }
   } else {
     seedData();
   }
@@ -717,36 +738,41 @@ function renderDashboard() {
       <p class="best-empty">Agrega estadísticas al contenido publicado para ver el top.</p>`;
   }
 
-  // Charts
-  const estados = ['Publicado','Grabado','En edición','En aprobación','Guion','Idea','No publicado'];
-  const estadoVals = estados.map(e=>cs.filter(c=>c.estado===e).length);
-  const estadoColors = ['#27AE60','#8E44AD','#E67E22','#2980B9','#F39C12','#95A5A6','#E74C3C'];
-  drawDonut('chartDonut', estadoVals, estadoColors, estados);
+  // Charts — each wrapped in try/catch so one failure never breaks the whole dashboard
+  try {
+    const estados = ['Publicado','Grabado','En edición','En aprobación','Guion','Idea','No publicado'];
+    const estadoVals = estados.map(e=>cs.filter(c=>c.estado===e).length);
+    const estadoColors = ['#27AE60','#8E44AD','#E67E22','#2980B9','#F39C12','#95A5A6','#E74C3C'];
+    drawDonut('chartDonut', estadoVals, estadoColors, estados);
+  } catch(e) { console.warn('chartDonut error', e); }
 
-  // platforms bar
-  const igPub = cs.filter(c=>c.ig?.publicado==='Sí').length;
-  const tkPub = cs.filter(c=>c.tk?.publicado==='Sí').length;
-  drawVerticalBar('chartPlatforms',['Instagram','TikTok'],[igPub,tkPub],'#F45A00',b.idealPub);
+  try {
+    const igPub = cs.filter(c=>c.ig?.publicado==='Sí').length;
+    const tkPub = cs.filter(c=>c.tk?.publicado==='Sí').length;
+    drawVerticalBar('chartPlatforms',['Instagram','TikTok'],[igPub,tkPub],'#F45A00',b.idealPub);
+  } catch(e) { console.warn('chartPlatforms error', e); }
 
-  // Top5 views
-  const pubCs = cs.filter(c=>c.estado==='Publicado' && statsMap[c.id]?.instagram?.ig_visualizaciones)
-    .sort((a,z)=>(statsMap[z.id]?.instagram?.ig_visualizaciones||0)-(statsMap[a.id]?.instagram?.ig_visualizaciones||0))
-    .slice(0,5);
-  drawHorizontalBar('chartTop5',
-    pubCs.map(c=>trunc(c.idea,20)),
-    pubCs.map(c=>+statsMap[c.id]?.instagram?.ig_visualizaciones||0),
-    '#FFA15C');
+  try {
+    const pubCs = cs.filter(c=>c.estado==='Publicado' && statsMap[c.id]?.instagram?.ig_visualizaciones)
+      .sort((a,z)=>(statsMap[z.id]?.instagram?.ig_visualizaciones||0)-(statsMap[a.id]?.instagram?.ig_visualizaciones||0))
+      .slice(0,5);
+    drawHorizontalBar('chartTop5',
+      pubCs.map(c=>trunc(c.idea,20)),
+      pubCs.map(c=>+statsMap[c.id]?.instagram?.ig_visualizaciones||0),
+      '#FFA15C');
+  } catch(e) { console.warn('chartTop5 error', e); }
 
-  // Engagement by platform
-  const avgEng = (plat) => {
-    const vals = cs.map(c=>{
-      const s = statsMap[c.id];
-      return s ? calcEngagement(s[plat],plat) : null;
-    }).filter(v=>v!==null).map(Number);
-    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
-  };
-  drawVerticalBar('chartEngagement',['Instagram','TikTok'],
-    [+avgEng('instagram'),+avgEng('tiktok')],'#FFA15C',10);
+  try {
+    const avgEng = (plat) => {
+      const vals = cs.map(c=>{
+        const s = statsMap[c.id];
+        return s ? calcEngagement(s[plat],plat) : null;
+      }).filter(v=>v!==null).map(Number);
+      return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0;
+    };
+    drawVerticalBar('chartEngagement',['Instagram','TikTok'],
+      [+avgEng('instagram'),+avgEng('tiktok')],'#FFA15C',10);
+  } catch(e) { console.warn('chartEngagement error', e); }
 
   // Compliance — based only on publications ratio
   const pts = Math.min(100, total > 0 ? Math.round((pub / total) * 100) : 0);
@@ -1018,14 +1044,18 @@ function renderEstadisticas() {
     }).join('');
   }
 
-  // stats charts
-  const top5 = cs.filter(c=>sm[c.id]?.instagram?.ig_visualizaciones)
-    .sort((a,z)=>(+(sm[z.id]?.instagram?.ig_visualizaciones||0))-(+(sm[a.id]?.instagram?.ig_visualizaciones||0))).slice(0,5);
-  drawHorizontalBar('chartStatsTop',
-    top5.map(c=>trunc(c.idea,18)),
-    top5.map(c=>+(sm[c.id]?.instagram?.ig_visualizaciones||0)),'#F45A00');
-  drawVerticalBar('chartStatsEng',['IG','TK'],
-    [+avgEng('instagram'),+avgEng('tiktok')],'#FFA15C',15);
+  // stats charts — each wrapped so one failure never breaks the whole tab
+  try {
+    const top5 = cs.filter(c=>sm[c.id]?.instagram?.ig_visualizaciones)
+      .sort((a,z)=>(+(sm[z.id]?.instagram?.ig_visualizaciones||0))-(+(sm[a.id]?.instagram?.ig_visualizaciones||0))).slice(0,5);
+    drawHorizontalBar('chartStatsTop',
+      top5.map(c=>trunc(c.idea,18)),
+      top5.map(c=>+(sm[c.id]?.instagram?.ig_visualizaciones||0)),'#F45A00');
+  } catch(e) { console.warn('chartStatsTop error', e); }
+  try {
+    drawVerticalBar('chartStatsEng',['IG','TK'],
+      [+avgEng('instagram'),+avgEng('tiktok')],'#FFA15C',15);
+  } catch(e) { console.warn('chartStatsEng error', e); }
 }
 
 function openStatsModal(contenidoId) {
@@ -1531,7 +1561,7 @@ function renderConfiguracion() {
       <h3 class="card-title">Marcas registradas</h3>
       <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
         ${Object.values(state.brands).map(br=>`
-          <div style="display:flex;align-items:center;gap:16px;padding:12px;background:var(--marfil);border-radius:10px;">
+          <div style="display:flex;align-items:center;gap:16px;padding:12px;background:var(--bg-2);border-radius:10px;">
             <div style="width:40px;height:40px;border-radius:10px;background:${br.color||'#F45A00'};color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${br.nombre.charAt(0)}</div>
             <div style="flex:1;">
               <div style="font-weight:600;">${br.nombre}</div>
@@ -1582,6 +1612,58 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 
 // ── BOOT ─────────────────────────────────────────────────────
+// ── DATA EXPORT / IMPORT ──────────────────────────────────────
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href     = url;
+  a.download = `dashboard-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Datos exportados ✓');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.brands || typeof imported.brands !== 'object') {
+        showToast('Archivo inválido: no contiene marcas', 'error'); return;
+      }
+      state = imported;
+      // Run defensive migration on imported data too
+      Object.values(state.brands).forEach(b => {
+        if (!Array.isArray(b.contenidos))  b.contenidos  = [];
+        if (!Array.isArray(b.ideas))       b.ideas       = [];
+        if (!Array.isArray(b.grabaciones)) b.grabaciones = [];
+        if (!b.stats)       b.stats       = {};
+        if (!b.contractual) b.contractual = {};
+        if (!b.feed)        b.feed        = { order: [], approved: false, approvedDate: '' };
+        b.contenidos.forEach(c => {
+          if (!c.ig) c.ig = { publicado: 'No', fecha: '', link: '' };
+          if (!c.tk) c.tk = { publicado: 'No', fecha: '', link: '' };
+          if (!c.fb) c.fb = { publicado: 'No', fecha: '', link: '' };
+        });
+      });
+      save();
+      updateSidebarBrand();
+      const active = document.querySelector('.nav-item.active');
+      if (active) switchTab(active.dataset.tab);
+      showToast('Datos importados correctamente ✓');
+    } catch(err) {
+      showToast('Error al leer el archivo JSON', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // reset input so same file can be re-imported
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   load();
 

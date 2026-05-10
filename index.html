@@ -314,6 +314,13 @@
         <h1 class="page-title">Configuración de marca</h1>
         <p class="page-subtitle" id="configBrandName"></p>
       </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="exportData()" title="Descargar respaldo JSON">⬇ Exportar datos</button>
+        <label class="btn-secondary" style="cursor:pointer;" title="Cargar respaldo JSON">
+          ⬆ Importar datos
+          <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+        </label>
+      </div>
     </div>
     <div id="configuracionContent"></div>
   </div>
