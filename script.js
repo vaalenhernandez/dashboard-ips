@@ -99,7 +99,7 @@ function estadoBadge(estado) {
   const map = {
     'Publicado':'publicado','No publicado':'no-publicado','Aprobado':'aprobado',
     'En aprobación':'en-aprobacion','En edición':'en-edicion','Grabado':'grabado',
-    'Guion':'guion','Idea':'idea'
+    'Guion':'guion','Idea':'idea','Entregado':'entregado'
   };
   return `<span class="estado-badge eb-${map[estado]||'idea'}">${estado}</span>`;
 }
@@ -1612,6 +1612,92 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 
 // ── BOOT ─────────────────────────────────────────────────────
+// ── SENTIDO ÓPTICO DATA RESTORATION ──────────────────────────
+// Runs once after load() if SO has no content for 2026 months.
+// Safe to redeploy: checks before writing, never overwrites existing data.
+function restoreSentidoOptico() {
+  const so = state.brands['so'];
+  if (!so) return;
+
+  // Guard: only restore if there's no content at all in SO
+  if (so.contenidos && so.contenidos.length > 0) return;
+
+  const mk = (mes, tipo, idea, objetivo, estado, igFecha) => ({
+    id: uid(), mes, tipo, idea, objetivo,
+    hook: '', cta: '', estado,
+    clientAprobo: estado === 'Publicado' ? 'Sí' : '',
+    fechaAprobacion: igFecha || '',
+    obs: '',
+    ig: { publicado: estado === 'Publicado' ? 'Sí' : 'No', fecha: igFecha || '', link: '' },
+    tk: { publicado: 'No', fecha: '', link: '' },
+    fb: { publicado: 'No', fecha: '', link: '' },
+    feedOrder: 999,
+    createdAt: new Date().toISOString()
+  });
+
+  // ── MARZO 2026 ────────────────────────────────────────────
+  const marzo = [
+    mk('Marzo','Carrusel','Día de la mujer','Humanización','Publicado','2026-03-08'),
+    mk('Marzo','Reel','Ver bien no es suficiente','Educación','Publicado','2026-03-11'),
+    mk('Marzo','Reel','Regla 20-20-20','Educación','Publicado','2026-03-13'),
+    mk('Marzo','Reel','¿Hace cuánto no visitas el optómetra?','Conversión','Publicado','2026-03-16'),
+    mk('Marzo','Reel','El error al elegir monturas','Educación','No publicado','2026-03-20'),
+    mk('Marzo','Reel','Ya tenemos punto físico','Humanización','Publicado','2026-03-21'),
+    mk('Marzo','Reel','Nuestra historia','Humanización','Publicado','2026-03-23'),
+    mk('Marzo','Reel','Y si elegir tus gafas pudiera sentirse…','Conversión','Publicado','2026-03-24'),
+    mk('Marzo','Reel','Nuestra experiencia - Trend','Humanización','Publicado','2026-03-26'),
+    mk('Marzo','Reel','Tu fórmula puede cambiar sin darte cuenta','Educación','Publicado','2026-03-27'),
+    mk('Marzo','Reel','Cuando compras gafas casi nadie te dice esto','Educación','Publicado','2026-03-30'),
+    mk('Marzo','Reel','Cuida tu visión este mes','Educación','Grabado',''),
+  ];
+
+  // ── ABRIL 2026 ────────────────────────────────────────────
+  const abril = [
+    mk('Abril','Reel','Gafas por $15.000','Conversión','Publicado','2026-04-07'),
+    mk('Abril','Reel','El tip que te va a servir para toda la vida','Educación','Publicado','2026-04-10'),
+    mk('Abril','Reel','La mayoría de personas que necesita gafas no lo sabe','Educación','Publicado','2026-04-14'),
+    mk('Abril','Reel','Trend gafas','Humanización','Publicado','2026-04-15'),
+    mk('Abril','Reel','La montura que más te gusta','Conversión','Publicado','2026-04-17'),
+    mk('Abril','Reel','Ver bien o ver mal','Educación','Publicado','2026-04-18'),
+    mk('Abril','Reel','Cada cuánto debo hacerme un examen de vista','Educación','Publicado','2026-04-20'),
+    mk('Abril','Reel','Testimonio Juan David','Humanización','Publicado','2026-04-22'),
+    mk('Abril','Reel','Cuando compras gafas','Educación','Publicado','2026-04-24'),
+    mk('Abril','Reel','Transición monturas','Conversión','Publicado','2026-04-29'),
+    mk('Abril','Reel','Reaccionando a las monturas','Humanización','No publicado','2026-04-30'),
+  ];
+
+  // ── MAYO 2026 ─────────────────────────────────────────────
+  const mayo = [
+    mk('Mayo','Reel','Esperar a ver mal para ir al optómetra','Educación','Publicado','2026-05-04'),
+    mk('Mayo','Reel','Mamá siempre vio por nosotros','Humanización','Publicado','2026-05-09'),
+  ];
+
+  so.contenidos = [...marzo, ...abril, ...mayo];
+
+  // ── SESIONES DE GRABACIÓN ─────────────────────────────────
+  const mkG = (fecha, lugar, videos, pendientes, estadoEdicion, fechaEntrega) => ({
+    id: uid(), fecha, lugar, persona: '', videos, tomas: 0,
+    pendientes, vestuario: '', props: '', estadoEdicion, fechaEntrega, obs: ''
+  });
+
+  so.grabaciones = [
+    mkG('2026-03-07','Containers',3,7,'Entregado','2026-03-10'),
+    mkG('2026-03-14','Óptica',7,0,'Entregado','2026-03-20'),
+    mkG('2026-03-31','Óptica',8,4,'Entregado','2026-04-06'),
+    mkG('2026-04-11','Óptica',5,0,'Entregado','2026-04-16'),
+    mkG('2026-05-02','Óptica',8,1,'Entregado','2026-05-07'),
+  ];
+
+  // Contractual stubs so the tab doesn't appear empty
+  so.contractual = {
+    Marzo: { reunion: true,  reporte: true,  fueraAlcance: '' },
+    Abril: { reunion: true,  reporte: true,  fueraAlcance: '' },
+    Mayo:  { reunion: false, reporte: false, fueraAlcance: '' },
+  };
+
+  save();
+}
+
 // ── DATA EXPORT / IMPORT ──────────────────────────────────────
 function exportData() {
   const json = JSON.stringify(state, null, 2);
@@ -1666,6 +1752,7 @@ function importData(event) {
 
 document.addEventListener('DOMContentLoaded', () => {
   load();
+  restoreSentidoOptico(); // one-time: fills SO data if empty, no-ops if data exists
 
   // month selector
   const ms = document.getElementById('monthSelect');
