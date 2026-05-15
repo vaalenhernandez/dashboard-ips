@@ -508,6 +508,160 @@
       .brand-header-inner { gap: 10px; }
       .powered-by { display: none; }
     }
+
+    /* ── FILTROS CALENDARIO ── */
+    .cal-filter-bar {
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      background: var(--white);
+      border: 1px solid var(--border-s);
+      border-radius: var(--r);
+      margin-bottom: 16px;
+    }
+    .filter-label {
+      font-size: 10px; font-weight: 700;
+      color: var(--t-soft);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-right: 2px;
+    }
+    .filter-sep { flex: 1; min-width: 6px; }
+    .cal-filter-btn {
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      font-size: 12px; font-weight: 500;
+      color: var(--t-mid);
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .cal-filter-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .cal-filter-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    /* ── CALENDARIO GRID ── */
+    .cal-wrap { margin-bottom: 28px; }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border: 1px solid var(--border-s);
+      border-radius: var(--r);
+      overflow: hidden;
+      background: var(--border-s);
+      gap: 1px;
+    }
+    .cal-hdr-day {
+      background: var(--bg);
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 10px; font-weight: 700;
+      color: var(--t-soft);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .cal-day {
+      background: var(--white);
+      min-height: 80px;
+      padding: 5px 4px;
+      vertical-align: top;
+    }
+    .cal-day.empty { background: var(--bg); }
+    .cal-day-num {
+      font-size: 11px; font-weight: 600;
+      color: var(--t-soft);
+      margin-bottom: 4px; line-height: 1;
+      display: flex; align-items: center;
+    }
+    .cal-day.today .cal-day-num {
+      width: 18px; height: 18px;
+      background: var(--brand); color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+    .cal-event-chip {
+      display: block;
+      font-size: 10px; font-weight: 500;
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      cursor: pointer;
+      line-height: 1.4;
+      overflow: hidden;
+      border-left: 2px solid transparent;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      transition: opacity 0.12s;
+    }
+    .cal-event-chip:hover { opacity: 0.72; }
+
+    /* Sin fecha */
+    .cal-nodate {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--white);
+      border: 1px solid var(--border-s);
+      border-radius: var(--r);
+    }
+    .cal-nodate-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--t-soft); margin-bottom: 8px;
+    }
+    .cal-nodate-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .cal-nodate-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px; font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.12s;
+    }
+    .cal-nodate-chip:hover { opacity: 0.72; }
+
+    /* ── CARD MODAL (bottom-sheet) ── */
+    .card-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(3px);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 300; padding: 0;
+    }
+    .card-modal-overlay.hidden { display: none; }
+    .card-modal-box {
+      background: var(--white);
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      width: 100%; max-width: 540px;
+      max-height: 88vh; overflow-y: auto;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+    }
+    .card-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid var(--border-s);
+      position: sticky; top: 0; background: var(--white); z-index: 1;
+    }
+    .card-modal-month {
+      font-size: 11px; font-weight: 700;
+      color: var(--t-soft); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .card-modal-close {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: var(--bg); color: var(--t-mid);
+      font-size: 15px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-modal-body { padding: 20px; }
+
+    @media (min-width: 560px) {
+      .card-modal-overlay { align-items: center; padding: 24px; }
+      .card-modal-box { border-radius: var(--r-lg); max-height: 80vh; }
+    }
+    @media (max-width: 600px) {
+      .cal-hdr-day { font-size: 9px; padding: 6px 2px; }
+      .cal-day { min-height: 60px; padding: 3px 2px; }
+      .cal-event-chip { font-size: 9px; padding: 2px 3px; }
+    }
   </style>
 </head>
 <body>
@@ -550,8 +704,9 @@
 
     <!-- Content section -->
     <div>
-      <div class="section-title">📋 Parrilla de contenidos</div>
-      <div class="content-grid" id="contentGrid"></div>
+      <div class="section-title">📅 Calendario del mes</div>
+      <div id="filterBar"></div>
+      <div id="contentGrid"></div>
     </div>
 
     <!-- Feed section -->
@@ -573,6 +728,17 @@
 
   <div class="client-footer">
     Vista de aprobación — solo lectura &nbsp;·&nbsp; Generada por tu agencia
+  </div>
+</div>
+
+<!-- ══ CARD MODAL ══ -->
+<div class="card-modal-overlay hidden" id="cardModal">
+  <div class="card-modal-box">
+    <div class="card-modal-header">
+      <span class="card-modal-month" id="cardModalMonth"></span>
+      <button class="card-modal-close" onclick="closeCardModal()">✕</button>
+    </div>
+    <div class="card-modal-body" id="cardModalBody"></div>
   </div>
 </div>
 
@@ -603,6 +769,9 @@ let _brand    = null;
 let _brandId  = null;
 let _month    = null;
 let _pendingChangesId = null;
+let _modalContentId   = null;
+let _filterPlat  = '';
+let _filterEstado = '';
 
 // ── INIT ───────────────────────────────────────────────────────
 function init() {
@@ -733,11 +902,21 @@ function selectMonth(m) {
 }
 
 function renderMonth() {
-  const cs = (_brand.contenidos || []).filter(c => c.mes === _month);
-  renderStats(cs);
-  renderContentCards(cs);
+  const allCs = (_brand.contenidos || []).filter(c => c.mes === _month);
+  // Apply filters
+  let cs = allCs;
+  if (_filterPlat === 'tiktok')    cs = cs.filter(c => c.tk?.publicado === 'Sí' || c.tk?.publicado === 'Pendiente');
+  if (_filterPlat === 'instagram') cs = cs; // all are for instagram
+  if (_filterEstado) cs = cs.filter(c => c.estado === _filterEstado);
+
+  renderStats(allCs);
+  renderFilters(allCs);
+  renderCalendar(cs);
   renderFeed();
 }
+
+function setFilterPlat(p) { _filterPlat = p; renderMonth(); }
+function setFilterEstado(e) { _filterEstado = e; renderMonth(); }
 
 // ── STATS ──────────────────────────────────────────────────────
 function renderStats(cs) {
@@ -776,6 +955,147 @@ function renderStats(cs) {
       <span class="stat-pill-lbl">con cambios solicitados</span>
     </div>` : ''}
   `;
+}
+
+// ── FILTROS ────────────────────────────────────────────────────
+function renderFilters(allCs) {
+  const plats   = _brand.plataformas || ['instagram'];
+  const estados = [...new Set(allCs.map(c => c.estado))].filter(Boolean).sort();
+  const platLbl = { instagram:'📸 Instagram', tiktok:'🎵 TikTok', facebook:'👥 Facebook' };
+
+  document.getElementById('filterBar').innerHTML = `
+    <div class="cal-filter-bar">
+      <span class="filter-label">Plataforma</span>
+      <button class="cal-filter-btn ${!_filterPlat ? 'active' : ''}" onclick="setFilterPlat('')">Todas</button>
+      ${plats.map(p => `
+        <button class="cal-filter-btn ${_filterPlat===p ? 'active' : ''}" onclick="setFilterPlat('${p}')">${platLbl[p]||p}</button>
+      `).join('')}
+      <span class="filter-sep"></span>
+      <span class="filter-label">Estado</span>
+      <button class="cal-filter-btn ${!_filterEstado ? 'active' : ''}" onclick="setFilterEstado('')">Todos</button>
+      ${estados.map(e => `
+        <button class="cal-filter-btn ${_filterEstado===e ? 'active' : ''}" onclick="setFilterEstado('${e}')">${e}</button>
+      `).join('')}
+    </div>`;
+}
+
+// ── CALENDARIO MENSUAL ─────────────────────────────────────────
+function getYearForMonth(monthName) {
+  const dates = (_brand.contenidos || [])
+    .filter(c => c.mes === monthName)
+    .flatMap(c => [c.ig?.fecha, c.tk?.fecha].filter(Boolean));
+  if (dates.length) return parseInt(dates[0].split('-')[0]) || new Date().getFullYear();
+  return new Date().getFullYear();
+}
+
+function renderCalendar(cs) {
+  const monthIdx  = MONTHS.indexOf(_month);
+  const year      = getYearForMonth(_month);
+  const today     = new Date();
+  const todayStr  = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  // Map date → contenidos
+  const byDate = {};
+  const noDate = [];
+  cs.forEach(c => {
+    const d = c.ig?.fecha || c.tk?.fecha || '';
+    if (d) { (byDate[d] = byDate[d] || []).push(c); }
+    else   { noDate.push(c); }
+  });
+
+  // Calendar structure (Monday-first)
+  const firstDow  = new Date(year, monthIdx, 1).getDay(); // 0=Sun
+  const startOff  = (firstDow + 6) % 7;                  // 0=Mon
+  const daysInMon = new Date(year, monthIdx + 1, 0).getDate();
+  const DAYS      = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const pad       = n => String(n).padStart(2,'0');
+
+  let html = `<div class="cal-wrap"><div class="cal-grid">`;
+  DAYS.forEach(d => { html += `<div class="cal-hdr-day">${d}</div>`; });
+  for (let i = 0; i < startOff; i++) html += `<div class="cal-day empty"></div>`;
+
+  for (let d = 1; d <= daysInMon; d++) {
+    const dateStr = `${year}-${pad(monthIdx+1)}-${pad(d)}`;
+    const isToday = dateStr === todayStr;
+    const dayCs   = byDate[dateStr] || [];
+    html += `<div class="cal-day ${isToday ? 'today' : ''}">
+      <div class="cal-day-num">${d}</div>
+      ${dayCs.map(c => calChip(c)).join('')}
+    </div>`;
+  }
+  html += `</div>`; // end cal-grid
+
+  if (noDate.length) {
+    html += `<div class="cal-nodate">
+      <div class="cal-nodate-label">Sin fecha asignada (${noDate.length})</div>
+      <div class="cal-nodate-chips">${noDate.map(c => calNoDateChip(c)).join('')}</div>
+    </div>`;
+  }
+
+  html += `</div>`; // end cal-wrap
+  if (!cs.length) {
+    html = `<div class="empty-state"><div class="icon">📭</div><div class="msg">Sin contenidos para este mes con esos filtros</div></div>`;
+  }
+  document.getElementById('contentGrid').innerHTML = html;
+}
+
+function calChip(c) {
+  const clr = estadoColor(c.estado);
+  const apIcon = c.clientAprobo === 'Sí' ? ' ✓' : c.clientAprobo === 'Cambios' ? ' ⚠' : '';
+  const platIcon = c.tk?.publicado === 'Sí' ? '🎵' : '📸';
+  return `<div class="cal-event-chip"
+    style="background:${clr}15;border-left-color:${clr};color:${clr};"
+    onclick="openCardModal('${c.id}')"
+    title="${esc(c.idea)}">${platIcon} ${esc(trunc(c.idea, 18))}${apIcon}</div>`;
+}
+
+function calNoDateChip(c) {
+  const clr = estadoColor(c.estado);
+  const apIcon = c.clientAprobo === 'Sí' ? ' ✓' : c.clientAprobo === 'Cambios' ? ' ⚠' : '';
+  return `<div class="cal-nodate-chip"
+    style="background:${clr}15;color:${clr};"
+    onclick="openCardModal('${c.id}')"
+    title="${esc(c.idea)}">${esc(trunc(c.idea, 24))}${apIcon}</div>`;
+}
+
+// ── CARD MODAL ─────────────────────────────────────────────────
+function openCardModal(id) {
+  _modalContentId = id;
+  const c = (_brand.contenidos || []).find(x => x.id === id);
+  if (!c) return;
+
+  const fecha   = c.ig?.fecha || c.tk?.fecha || '';
+  const igLink  = c.ig?.link;
+  const tkLink  = c.tk?.link;
+  const obsHtml = c.obs ? `<div class="content-obs" style="margin:8px 0;">💬 ${esc(c.obs)}</div>` : '';
+  const noteHtml = c.clientNota ? `<div class="client-note" style="margin-top:8px;">⚠️ ${esc(c.clientNota)}</div>` : '';
+  const linksHtml = (igLink || tkLink) ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+    ${igLink ? `<a class="pub-link" href="${esc(igLink)}" target="_blank">📸 Ver en Instagram ↗</a>` : ''}
+    ${tkLink ? `<a class="pub-link" href="${esc(tkLink)}" target="_blank">🎵 Ver en TikTok ↗</a>` : ''}
+  </div>` : '';
+
+  document.getElementById('cardModalMonth').textContent = `${_month} ${fecha ? '· '+fmtDate(fecha) : ''}`;
+  document.getElementById('cardModalBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <span class="type-badge">${c.tipo || 'Reel'}</span>
+      ${fecha ? `<span class="date-chip">📅 ${fmtDate(fecha)}</span>` : ''}
+      <span style="margin-left:auto;">${estadoBadgeHtml(c.estado)}</span>
+    </div>
+    <div class="content-idea" style="margin-bottom:8px;">${esc(c.idea || '—')}</div>
+    ${c.objetivo ? `<div style="font-size:12px;color:var(--t-soft);margin-bottom:6px;">🎯 ${esc(c.objetivo)}</div>` : ''}
+    ${c.hook ? `<div style="font-size:12px;color:var(--t-soft);margin-bottom:6px;">🪝 ${esc(c.hook)}</div>` : ''}
+    ${obsHtml}
+    ${linksHtml}
+    <div class="approval-row" style="margin-top:12px;" id="modalApprovalRow">${renderApprovalRow(c)}</div>
+    <div id="modalNoteArea">${noteHtml}</div>
+  `;
+
+  document.getElementById('cardModal').classList.remove('hidden');
+}
+
+function closeCardModal() {
+  document.getElementById('cardModal').classList.add('hidden');
+  _modalContentId = null;
 }
 
 // ── CONTENT CARDS ──────────────────────────────────────────────
@@ -873,6 +1193,7 @@ function requestChanges(id) {
   _pendingChangesId = id;
   document.getElementById('noteInput').value = '';
   document.getElementById('noteModal').classList.remove('hidden');
+  // Keep card modal open behind note modal
   setTimeout(() => document.getElementById('noteInput').focus(), 80);
 }
 
@@ -889,7 +1210,6 @@ function confirmChanges() {
 }
 
 function writeApproval(id, status, note) {
-  // Read fresh state, update, write back
   const rawState = localStorage.getItem(STORAGE_KEY);
   if (!rawState) return;
   try {
@@ -902,10 +1222,21 @@ function writeApproval(id, status, note) {
     c.clientNota   = note || '';
     if (status === 'Sí') c.clientNota = '';
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-    // Re-read brand from updated state (keep reference fresh)
     _brand = appState.brands[_brandId];
-    // Re-render current month
     renderMonth();
+
+    // If this card's modal is open, refresh its approval row in place
+    if (_modalContentId === id) {
+      const updatedC = (_brand.contenidos || []).find(x => x.id === id);
+      if (updatedC) {
+        const row = document.getElementById('modalApprovalRow');
+        if (row) row.innerHTML = renderApprovalRow(updatedC);
+        const noteArea = document.getElementById('modalNoteArea');
+        if (noteArea) noteArea.innerHTML = updatedC.clientNota
+          ? `<div class="client-note" style="margin-top:8px;">⚠️ ${esc(updatedC.clientNota)}</div>` : '';
+        document.getElementById('cardModal').classList.remove('hidden');
+      }
+    }
   } catch(e) { showToast('Error al guardar', 'error'); }
 }
 
@@ -973,7 +1304,7 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function estadoBadgeHtml(estado) {
+function estadoColor(estado) {
   const map = {
     'Publicado':     '#059669',
     'No publicado':  '#DC2626',
@@ -982,8 +1313,13 @@ function estadoBadgeHtml(estado) {
     'En aprobación': '#2563EB',
     'Guion':         '#EA580C',
     'Idea':          '#94A3B8',
+    'Sin editar':    '#94A3B8',
   };
-  const color = map[estado] || '#94A3B8';
+  return map[estado] || '#94A3B8';
+}
+
+function estadoBadgeHtml(estado) {
+  const color = estadoColor(estado);
   return `<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;
     background:${color}18;color:${color};border:1px solid ${color}28;">${estado || '—'}</span>`;
 }

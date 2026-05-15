@@ -176,6 +176,14 @@ function load() {
           if (!c.fb) c.fb = { publicado: 'No', fecha: '', link: '' };
         });
       });
+      // Migration: Sentido Óptico uses TikTok, not Facebook
+      if (state.brands?.so) {
+        const soPl = state.brands.so.plataformas || [];
+        const fbIdx = soPl.indexOf('facebook');
+        if (fbIdx !== -1 && !soPl.includes('tiktok')) {
+          soPl.splice(fbIdx, 1, 'tiktok');
+        }
+      }
       if (!state.currentBrand && Object.keys(state.brands || {}).length)
         state.currentBrand = Object.keys(state.brands)[0];
       if (!state.currentMonth) state.currentMonth = 'Marzo';
@@ -217,7 +225,7 @@ function seedData() {
 
   const so = mkBrand('so','Sentido Óptico','Salud visual','#2F6B55',
     '@sentidooptico','@sentidooptico','Sentido Óptico',
-    ['instagram','facebook'], 6, 10, 8);
+    ['instagram','tiktok'], 6, 10, 8);
 
   const mk = (mes, idea, tipo, objetivo, estado, pub) => ({
     id: uid(), mes, tipo, idea, objetivo,
@@ -1165,7 +1173,16 @@ function renderFeed() {
       ondragover="onFeedDragOver(event)"
       ondrop="onFeedDrop(event,${i})"
       ondragend="onFeedDragEnd()">
-      ${c._feedImg?`<img src="${c._feedImg}" alt="${c.idea}" />`:`
+      ${c._feedImg ? `
+        <div class="feed-cell-img-wrap">
+          <img src="${c._feedImg}" alt="${c.idea}" />
+          <div class="feed-img-actions">
+            <label class="feed-img-btn" title="Reemplazar imagen">
+              🔄<input type="file" accept="image/*" onchange="uploadFeedImage(event,'${c.id}')" />
+            </label>
+            <button class="feed-img-btn" title="Eliminar imagen" onclick="deleteFeedImage('${c.id}')">🗑</button>
+          </div>
+        </div>` : `
         <div class="feed-cell-placeholder">
           <span>${c.tipo}</span>
           <small>${trunc(c.idea,30)}</small>
@@ -1224,6 +1241,16 @@ async function uploadFeedImage(e, contenidoId) {
   const dataUrl = await resizeImage(file, 800, 800, 0.85);
   const c = b.contenidos.find(x=>x.id===contenidoId);
   if (c) { c._feedImg = dataUrl; save(); renderFeed(); }
+}
+
+function deleteFeedImage(contenidoId) {
+  const b = currentBrand();
+  const c = b.contenidos.find(x=>x.id===contenidoId);
+  if (!c) return;
+  delete c._feedImg;
+  save();
+  renderFeed();
+  showToast('Imagen eliminada');
 }
 
 // ── CONTRACTUAL ───────────────────────────────────────────────

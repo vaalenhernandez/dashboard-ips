@@ -1165,6 +1165,33 @@ html, body {
   margin-top: 4px;
 }
 .feed-upload-btn input { display: none; }
+
+/* Feed image overlay actions (delete / replace) */
+.feed-cell-img-wrap { position: relative; width: 100%; height: 100%; }
+.feed-cell-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.feed-img-actions {
+  position: absolute; top: 4px; right: 4px;
+  display: flex; gap: 3px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.feed-cell:hover .feed-img-actions { opacity: 1; }
+.feed-img-btn {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.65);
+  color: #fff; font-size: 13px;
+  cursor: pointer; border: none;
+  backdrop-filter: blur(3px);
+  transition: background 0.12s;
+}
+.feed-img-btn:hover { background: rgba(0,0,0,0.85); }
+.feed-img-btn input[type=file] {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; font-size: 0; width: 100%;
+}
+
 .feed-cell-num {
   position: absolute;
   top: 5px; left: 5px;
