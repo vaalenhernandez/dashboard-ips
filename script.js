@@ -168,7 +168,9 @@ function load() {
         if (!b.contractual) b.contractual = {};
         if (!b.feed)        b.feed        = { order: [], approved: false, approvedDate: '' };
         if (!Array.isArray(b.plataformas)) b.plataformas = ['instagram'];
-        if (b.clientPin === undefined) b.clientPin = '';
+        if (b.clientPin === undefined)          b.clientPin = '';
+        if (!Array.isArray(b.clientHiddenMonths)) b.clientHiddenMonths = [];
+        if (!Array.isArray(b.clientHiddenPlats))  b.clientHiddenPlats  = [];
         // Per-contenido: ensure platform sub-objects exist
         b.contenidos.forEach(c => {
           if (!c.ig) c.ig = { publicado: 'No', fecha: '', link: '' };
@@ -210,6 +212,8 @@ function mkBrand(id, nombre, sector, color, ig, tk, fb, plats, minPub, idealPub,
     minPub, idealPub, histMeta,
     requireMeeting: true, requireReport: true,
     clientPin: '',
+    clientHiddenMonths: [],   // months hidden from client view ([] = all visible)
+    clientHiddenPlats:  [],   // platforms hidden from client view ([] = all visible)
     contenidos: [], ideas: [], grabaciones: [],
     contractual: {},
     stats: {},
@@ -372,6 +376,11 @@ function renderBrandList() {
   `).join('');
 }
 
+const ALL_MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const PLAT_MAP   = { ig:'instagram', tk:'tiktok', fb:'facebook', yt:'youtube', li:'linkedin' };
+const PLAT_LABELS= { instagram:'Instagram', tiktok:'TikTok', facebook:'Facebook', youtube:'YouTube', linkedin:'LinkedIn' };
+
 function openNuevaMarca(id = null) {
   const b = id ? state.brands[id] : null;
   document.getElementById('modalMarcaTitle').textContent = b ? 'Editar marca' : 'Nueva marca';
@@ -382,12 +391,35 @@ function openNuevaMarca(id = null) {
   g('mIgHandle', b?.igHandle); g('mTkHandle', b?.tkHandle); g('mFbHandle', b?.fbHandle);
   ['ig','tk','fb','yt','li'].forEach(p => {
     const el = document.getElementById('mPlat'+p.charAt(0).toUpperCase()+p.slice(1));
-    if (el) el.checked = b?.plataformas?.includes({ig:'instagram',tk:'tiktok',fb:'facebook',yt:'youtube',li:'linkedin'}[p]) || false;
+    if (el) el.checked = b?.plataformas?.includes(PLAT_MAP[p]) || false;
   });
   g('mMinPub', b?.minPub??8); g('mIdealPub', b?.idealPub??12); g('mHistMeta', b?.histMeta??12);
   document.getElementById('mRequireMeeting').value = String(b?.requireMeeting??true);
   document.getElementById('mRequireReport').value  = String(b?.requireReport??true);
   g('mClientPin', b?.clientPin);
+
+  // Build dynamic month visibility checkboxes
+  const hiddenMonths = b?.clientHiddenMonths || [];
+  document.getElementById('mClientMonths').innerHTML = ALL_MONTHS.map(m => `
+    <label class="checkbox-label">
+      <input type="checkbox" class="mClientMonthChk" value="${m}" ${!hiddenMonths.includes(m) ? 'checked' : ''} />
+      ${m}
+    </label>`).join('');
+
+  // Build platform visibility checkboxes (only active platforms)
+  const activePlats = b?.plataformas || ['instagram'];
+  const hiddenPlats = b?.clientHiddenPlats || [];
+  const platBox = document.getElementById('mClientPlats');
+  if (activePlats.length) {
+    platBox.innerHTML = activePlats.map(p => `
+      <label class="checkbox-label">
+        <input type="checkbox" class="mClientPlatChk" value="${p}" ${!hiddenPlats.includes(p) ? 'checked' : ''} />
+        ${PLAT_LABELS[p]||p}
+      </label>`).join('');
+  } else {
+    platBox.innerHTML = '<span style="font-size:12px;color:var(--t-soft);">Activa al menos una plataforma primero</span>';
+  }
+
   openModal('modal-marca');
 }
 
@@ -418,6 +450,13 @@ function saveMarca() {
     requireMeeting: document.getElementById('mRequireMeeting').value==='true',
     requireReport:  document.getElementById('mRequireReport').value==='true',
     clientPin: (document.getElementById('mClientPin')?.value || existing.clientPin || '').trim(),
+    // client visibility
+    clientHiddenMonths: ALL_MONTHS.filter(m => {
+      const chk = document.querySelector(`.mClientMonthChk[value="${m}"]`);
+      return chk && !chk.checked;  // hidden = unchecked
+    }),
+    clientHiddenPlats: [...document.querySelectorAll('.mClientPlatChk')]
+      .filter(chk => !chk.checked).map(chk => chk.value),
     // preserve data
     contenidos: existing.contenidos||[],
     ideas:      existing.ideas||[],

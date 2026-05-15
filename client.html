@@ -871,9 +871,10 @@ function renderApp() {
   document.getElementById('headerHandle').textContent = _brand.igHandle || '';
   document.title = `${_brand.nombre} — Portal de aprobación`;
 
-  // Detect available months from contenidos
+  // Detect available months from contenidos — then filter by admin visibility
+  const hiddenMonths = _brand.clientHiddenMonths || [];
   const allMonths = [...new Set((_brand.contenidos || []).map(c => c.mes))];
-  const orderedMonths = MONTHS.filter(m => allMonths.includes(m));
+  const orderedMonths = MONTHS.filter(m => allMonths.includes(m) && !hiddenMonths.includes(m));
 
   // Default to first available month or current
   if (!_month) {
@@ -902,6 +903,7 @@ function selectMonth(m) {
 }
 
 function renderMonth() {
+  const hiddenPlats  = _brand.clientHiddenPlats  || [];
   const allCs = (_brand.contenidos || []).filter(c => c.mes === _month);
   // Apply filters
   let cs = allCs;
@@ -909,10 +911,17 @@ function renderMonth() {
   if (_filterPlat === 'instagram') cs = cs; // all are for instagram
   if (_filterEstado) cs = cs.filter(c => c.estado === _filterEstado);
 
+  // If a platform filter was selected but that platform is now hidden, reset filter
+  if (_filterPlat && hiddenPlats.includes(_filterPlat)) _filterPlat = '';
+
   renderStats(allCs);
   renderFilters(allCs);
   renderCalendar(cs);
-  renderFeed();
+
+  // Show/hide feed section based on IG visibility
+  const feedSection = document.querySelector('.feed-section');
+  if (feedSection) feedSection.style.display = hiddenPlats.includes('instagram') ? 'none' : '';
+  if (!hiddenPlats.includes('instagram')) renderFeed();
 }
 
 function setFilterPlat(p) { _filterPlat = p; renderMonth(); }
@@ -959,7 +968,9 @@ function renderStats(cs) {
 
 // ── FILTROS ────────────────────────────────────────────────────
 function renderFilters(allCs) {
-  const plats   = _brand.plataformas || ['instagram'];
+  // Only show platforms that are active for this brand AND not hidden by admin
+  const hiddenPlats = _brand.clientHiddenPlats || [];
+  const plats = (_brand.plataformas || ['instagram']).filter(p => !hiddenPlats.includes(p));
   const estados = [...new Set(allCs.map(c => c.estado))].filter(Boolean).sort();
   const platLbl = { instagram:'📸 Instagram', tiktok:'🎵 TikTok', facebook:'👥 Facebook' };
 
