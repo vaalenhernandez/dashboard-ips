@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
 
@@ -209,9 +209,12 @@
           <button class="toggle-btn"        id="btnPhoneView" onclick="setFeedView('phone')">📱 Celular</button>
         </div>
         <button class="btn-secondary" onclick="addFeedSlot()">+ Agregar casilla</button>
+        <button class="btn-secondary" onclick="openFeedManageModal()">⚙ Gestionar</button>
         <button class="btn-secondary" onclick="markFeedApproved()">✓ Aprobar feed</button>
       </div>
     </div>
+    <!-- Tabs de mes del feed (independientes del sidebar) -->
+    <div class="feed-month-tabs" id="feedMonthTabs"></div>
     <div class="feed-approval-bar" id="feedApprovalBar"></div>
     <!-- Grid view -->
     <div id="feedGridView">
@@ -721,6 +724,34 @@
     <div class="modal-footer">
       <button class="btn-ghost"   onclick="closeModal('modal-confirm')">Cancelar</button>
       <button class="btn-danger"  id="confirmBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL GESTIONAR FEED ─────────────────────── -->
+<div class="modal-overlay" id="modal-feed-manage">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 class="modal-title">⚙ Gestionar feed</h2>
+      <button class="modal-close" onclick="closeModal('modal-feed-manage')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="feedManageInfo" style="font-size:13px;color:var(--t-mid);margin-bottom:18px;line-height:1.5;"></p>
+
+      <div class="form-group">
+        <label>Mes de destino</label>
+        <select id="feedTargetMonth"></select>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="executeFeedCopy()">📋 Copiar feed a ese mes</button>
+        <button class="btn-ghost"   onclick="executeFeedMove()">📦 Mover feed a ese mes</button>
+      </div>
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border-s);">
+        <p style="font-size:12px;color:var(--t-soft);margin-bottom:10px;">Zona de peligro</p>
+        <button class="btn-danger" onclick="executeFeedClear()">🗑 Limpiar feed de este mes</button>
+      </div>
     </div>
   </div>
 </div>

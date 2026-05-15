@@ -1109,6 +1109,30 @@ html, body {
   font-weight: 600;
 }
 
+/* Feed month tabs (independent selector within feed tab) */
+.feed-month-tabs {
+  display: flex; gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.feed-month-tab {
+  padding: 5px 14px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  font-size: 12px; font-weight: 500;
+  color: var(--t-mid);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+}
+.feed-month-tab:hover { border-color: var(--orange); color: var(--orange); }
+.feed-month-tab.active {
+  background: var(--orange); color: #fff;
+  border-color: var(--orange);
+}
+
 .feed-approval-bar {
   display: none;
   padding: 10px 16px;

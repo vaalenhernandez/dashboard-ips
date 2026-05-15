@@ -64,6 +64,7 @@ let _editingId   = null;
 let _statsPlatform = 'instagram';
 let _confirmCb   = null;
 let _dragSrcIdx  = null;
+let _feedMonth   = null;   // month shown in feed tab (null = follows state.currentMonth)
 
 // ── UTILS ────────────────────────────────────────────────────
 const uid = () => 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
@@ -345,6 +346,7 @@ document.addEventListener('click', e => {
 
 function switchBrand(id) {
   state.currentBrand = id;
+  _feedMonth = null;   // reset feed month view when brand changes
   save();
   updateSidebarBrand();
   document.getElementById('brandDropdown').classList.remove('open');
@@ -1192,13 +1194,17 @@ const MONTH_NUMS = {
   'Septiembre':'09','Octubre':'10','Noviembre':'11','Diciembre':'12'
 };
 
-/** Returns the 'YYYY-MM' key for the current brand+month */
-function getMonthKey() {
+/** Active feed month name (may differ from sidebar month) */
+function activeFeedMonth() {
+  return _feedMonth || state.currentMonth;
+}
+
+/** Returns the 'YYYY-MM' key for the given month name (default: activeFeedMonth) */
+function getMonthKey(monthName) {
   const b   = currentBrand();
-  const m   = state.currentMonth;
+  const m   = monthName || activeFeedMonth();
   const num = MONTH_NUMS[m];
   if (!num) return null;
-  // Infer year from contenido dates (fallback to current year)
   const dates = b.contenidos
     .filter(c => c.mes === m)
     .flatMap(c => [c.ig?.fecha, c.tk?.fecha].filter(Boolean));
@@ -1206,23 +1212,23 @@ function getMonthKey() {
   return `${year}-${num}`;
 }
 
-/** Returns (or auto-creates) the feed data for the current month */
-function getFeedMonthData() {
+/** Returns (or auto-creates) the feed data for the given month (default: activeFeedMonth) */
+function getFeedMonthData(monthName) {
   const b   = currentBrand();
-  const key = getMonthKey();
+  const m   = monthName || activeFeedMonth();
+  const key = getMonthKey(m);
   if (!key) return null;
   if (!b.feedByMonth) b.feedByMonth = {};
   if (!b.feedByMonth[key]) {
-    // Auto-populate slots from this month's published/pendiente contenidos
     const published = b.contenidos.filter(c =>
-      c.mes === state.currentMonth &&
+      c.mes === m &&
       (c.ig?.publicado === 'Sí' || c.ig?.publicado === 'Pendiente')
     );
     b.feedByMonth[key] = {
       slots: published.map(c => ({
         id: uid(),
         contenidoId: c.id,
-        img: c._feedImg || null   // copy existing legacy image if any
+        img: c._feedImg || null
       })),
       approved: false,
       approvedDate: ''
@@ -1231,13 +1237,37 @@ function getFeedMonthData() {
   return b.feedByMonth[key];
 }
 
+function renderFeedMonthTabs() {
+  const b   = currentBrand();
+  const cur = activeFeedMonth();
+  // Show all months that have contenidos
+  const months = ALL_MONTHS.filter(m => b.contenidos.some(c => c.mes === m));
+  const tabsEl = document.getElementById('feedMonthTabs');
+  if (!tabsEl) return;
+  tabsEl.innerHTML = months.map(m => {
+    const key  = getMonthKey(m);
+    const hasFeed = key && b.feedByMonth?.[key]?.slots?.length > 0;
+    return `<button class="feed-month-tab ${m === cur ? 'active' : ''}" onclick="setFeedMonth('${m}')">
+      ${m}${hasFeed ? ' <span style="font-size:9px;opacity:0.7;">●</span>' : ''}
+    </button>`;
+  }).join('');
+}
+
+function setFeedMonth(m) {
+  _feedMonth = m;
+  renderFeed();
+}
+
 function renderFeed() {
   const b  = currentBrand();
+  if (!_feedMonth) _feedMonth = state.currentMonth;
   const fd = getFeedMonthData();
   if (!fd) return;
 
+  renderFeedMonthTabs();
+
   document.getElementById('feedBrandMonth').textContent =
-    `${b.nombre} — ${state.currentMonth} — Feed Instagram`;
+    `${b.nombre} — ${activeFeedMonth()} — Feed Instagram`;
 
   // Phone header
   const picEl = document.getElementById('igProfilePic');
@@ -1324,6 +1354,101 @@ function markFeedApproved() {
   fd.approvedDate = new Date().toISOString().split('T')[0];
   save(); renderFeed();
   showToast('Feed marcado como aprobado ✓');
+}
+
+function openFeedManageModal() {
+  const b   = currentBrand();
+  const cur = activeFeedMonth();
+  const fd  = getFeedMonthData();
+  const cnt = fd?.slots?.length ?? 0;
+
+  document.getElementById('feedManageInfo').textContent =
+    `Feed activo: ${cur} (${cnt} casilla${cnt !== 1 ? 's' : ''})`;
+
+  // Populate target month select (all months except current)
+  const months = ALL_MONTHS.filter(m => b.contenidos.some(c => c.mes === m) && m !== cur);
+  const sel = document.getElementById('feedTargetMonth');
+  sel.innerHTML = months.length
+    ? months.map(m => `<option value="${m}">${m}</option>`).join('')
+    : `<option value="" disabled>No hay otros meses disponibles</option>`;
+
+  openModal('modal-feed-manage');
+}
+
+function executeFeedCopy() {
+  const target = document.getElementById('feedTargetMonth').value;
+  if (!target) { showToast('Selecciona un mes de destino','error'); return; }
+  const b      = currentBrand();
+  const srcFd  = getFeedMonthData();
+  if (!srcFd?.slots?.length) { showToast('El feed de este mes está vacío','error'); return; }
+
+  confirmAction(
+    `¿Copiar feed a ${target}?`,
+    `Se copiará el feed de ${activeFeedMonth()} (${srcFd.slots.length} casillas) a ${target}. El feed de ${target} será reemplazado.`,
+    () => {
+      const tgtKey = getMonthKey(target);
+      if (!tgtKey) return;
+      if (!b.feedByMonth) b.feedByMonth = {};
+      b.feedByMonth[tgtKey] = {
+        slots: srcFd.slots.map(s => ({ id: uid(), contenidoId: s.contenidoId, img: s.img })),
+        approved: false, approvedDate: ''
+      };
+      save();
+      closeModal('modal-feed-manage');
+      showToast(`Feed copiado a ${target} ✓`);
+      renderFeedMonthTabs();
+    }
+  );
+}
+
+function executeFeedMove() {
+  const target = document.getElementById('feedTargetMonth').value;
+  if (!target) { showToast('Selecciona un mes de destino','error'); return; }
+  const b      = currentBrand();
+  const srcFd  = getFeedMonthData();
+  const cur    = activeFeedMonth();
+  if (!srcFd?.slots?.length) { showToast('El feed de este mes está vacío','error'); return; }
+
+  confirmAction(
+    `¿Mover feed de ${cur} a ${target}?`,
+    `Las ${srcFd.slots.length} casillas (con imágenes y orden) se moverán a ${target} y ${cur} quedará vacío.`,
+    () => {
+      const tgtKey = getMonthKey(target);
+      const srcKey = getMonthKey(cur);
+      if (!tgtKey || !srcKey) return;
+      if (!b.feedByMonth) b.feedByMonth = {};
+      // Copy to target
+      b.feedByMonth[tgtKey] = {
+        slots: srcFd.slots.map(s => ({ id: uid(), contenidoId: s.contenidoId, img: s.img })),
+        approved: false, approvedDate: ''
+      };
+      // Clear source
+      b.feedByMonth[srcKey] = { slots: [], approved: false, approvedDate: '' };
+      save();
+      closeModal('modal-feed-manage');
+      _feedMonth = target;
+      showToast(`Feed movido a ${target} ✓`);
+      renderFeed();
+    }
+  );
+}
+
+function executeFeedClear() {
+  const cur = activeFeedMonth();
+  const fd  = getFeedMonthData();
+  confirmAction(
+    `¿Limpiar feed de ${cur}?`,
+    `Se eliminarán todas las casillas e imágenes del feed de ${cur}. Esta acción no se puede deshacer.`,
+    () => {
+      fd.slots        = [];
+      fd.approved     = false;
+      fd.approvedDate = '';
+      save();
+      closeModal('modal-feed-manage');
+      showToast(`Feed de ${cur} limpiado`);
+      renderFeed();
+    }
+  );
 }
 
 function addFeedSlot() {
