@@ -711,7 +711,10 @@
 
     <!-- Feed section -->
     <div class="feed-section">
-      <div class="section-title">📱 Feed Instagram</div>
+      <div class="section-title" style="display:flex;align-items:center;gap:12px;">
+        📱 Feed Instagram
+        <span id="feedApprovedBadge"></span>
+      </div>
       <div class="section-sub">Vista previa del orden de publicaciones en el perfil</div>
       <div class="ig-mockup">
         <div class="ig-profile-bar">
@@ -903,6 +906,9 @@ function selectMonth(m) {
 }
 
 function renderMonth() {
+  // Refrescar _brand desde localStorage para siempre leer datos actualizados del admin
+  loadBrandFromStorage();
+
   const hiddenPlats  = _brand.clientHiddenPlats  || [];
   const allCs = (_brand.contenidos || []).filter(c => c.mes === _month);
   // Apply filters
@@ -1252,44 +1258,100 @@ function writeApproval(id, status, note) {
 }
 
 // ── FEED PREVIEW ───────────────────────────────────────────────
+
+/** Convierte nombre de mes ('Marzo') → clave 'YYYY-MM' leyendo el año desde fechas de contenidos */
+function getClientMonthKey(monthName) {
+  const MONTH_NUMS = {
+    'Enero':'01','Febrero':'02','Marzo':'03','Abril':'04',
+    'Mayo':'05','Junio':'06','Julio':'07','Agosto':'08',
+    'Septiembre':'09','Octubre':'10','Noviembre':'11','Diciembre':'12'
+  };
+  const num = MONTH_NUMS[monthName];
+  if (!num) return null;
+  // Infer year from contenido dates for this month
+  const dates = (_brand.contenidos || [])
+    .filter(c => c.mes === monthName)
+    .flatMap(c => [c.ig?.fecha, c.tk?.fecha].filter(Boolean));
+  const year = dates.length
+    ? parseInt(dates[0].split('-')[0])
+    : new Date().getFullYear();
+  return `${year}-${num}`;
+}
+
 function renderFeed() {
-  const igPub = (_brand.contenidos || []).filter(c =>
-    c.ig?.publicado === 'Sí' || c.estado === 'Publicado'
-  );
-
-  // Use feed order if available
-  let ordered = igPub;
-  if (_brand.feed?.order?.length) {
-    const orderMap = {};
-    _brand.feed.order.forEach((id, i) => { orderMap[id] = i; });
-    ordered = [...igPub].sort((a,b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999));
-  }
-
-  const displayItems = ordered.slice(0, 12); // max 12 for preview
-
+  // Profile header
   document.getElementById('feedAvatar').textContent = _brand.nombre.charAt(0).toUpperCase();
   document.getElementById('feedAvatar').style.background = _brand.color || '#F45A00';
   document.getElementById('feedHandle').textContent = _brand.igHandle || '@cuenta';
-  document.getElementById('feedCount').textContent = `${igPub.length} publicaciones`;
+
+  // Read feedByMonth for the currently selected month
+  const monthKey = getClientMonthKey(_month);
+  const feedData = (monthKey && _brand.feedByMonth) ? _brand.feedByMonth[monthKey] : null;
+  const slots    = feedData?.slots || [];
+  const approved = feedData?.approved || false;
+
+  const filledCount = slots.filter(s => s.img || s.contenidoId).length;
+  document.getElementById('feedCount').textContent = filledCount
+    ? `${filledCount} publicaciones`
+    : 'Sin publicaciones configuradas';
+
+  // Feed approved badge (shown in section subtitle if applicable)
+  const subtitle = document.getElementById('feedApprovedBadge');
+  if (subtitle) {
+    subtitle.innerHTML = approved
+      ? `<span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;
+          background:#ECFDF5;color:#059669;border:1px solid rgba(5,150,105,0.2);">✓ Feed aprobado</span>`
+      : '';
+  }
 
   const grid = document.getElementById('igGrid');
-  if (!displayItems.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:#999;font-size:13px;">Sin publicaciones para mostrar</div>`;
+
+  if (!slots.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:#999;font-size:13px;">
+      Sin feed configurado para ${_month}</div>`;
     return;
   }
 
-  grid.innerHTML = displayItems.map(c => {
-    const aprStatus = c.clientAprobo === 'Sí' ? `<div class="ig-cell-status ok">✓</div>`
-                    : c.clientAprobo === 'Cambios' ? `<div class="ig-cell-status chg">!</div>` : '';
-    const inner = c._feedImg
-      ? `<img src="${c._feedImg}" alt="${esc(c.idea)}" loading="lazy">`
-      : `<div class="ig-cell-placeholder">
-           <span style="font-size:18px;">${c.tipo === 'Carrusel' ? '🖼' : '🎬'}</span>
-           <span class="ig-cell-type">${c.tipo || 'Reel'}</span>
-           <span class="ig-cell-idea">${esc(trunc(c.idea, 24))}</span>
-         </div>`;
+  grid.innerHTML = slots.map(slot => {
+    let inner     = '';
+    let aprStatus = '';
+
+    if (slot.img) {
+      // Slot tiene imagen subida desde admin
+      inner = `<img src="${slot.img}" alt="Publicación" loading="lazy">`;
+      if (slot.contenidoId) {
+        const c = (_brand.contenidos || []).find(x => x.id === slot.contenidoId);
+        if (c) aprStatus = aprBadge(c);
+      }
+    } else if (slot.contenidoId) {
+      // Slot vinculado a contenido pero sin imagen
+      const c = (_brand.contenidos || []).find(x => x.id === slot.contenidoId);
+      if (c) {
+        inner = `<div class="ig-cell-placeholder">
+          <span style="font-size:18px;">${c.tipo === 'Carrusel' ? '🖼' : '🎬'}</span>
+          <span class="ig-cell-type">${c.tipo || 'Reel'}</span>
+          <span class="ig-cell-idea">${esc(trunc(c.idea, 24))}</span>
+        </div>`;
+        aprStatus = aprBadge(c);
+      } else {
+        inner = `<div class="ig-cell-placeholder"><span style="font-size:18px;">📷</span></div>`;
+      }
+    } else {
+      // Slot vacío
+      inner = `<div class="ig-cell-placeholder">
+        <span style="font-size:22px;opacity:.3;">☐</span>
+        <span class="ig-cell-type" style="opacity:.35;">Vacío</span>
+      </div>`;
+    }
+
     return `<div class="ig-cell">${inner}<div class="ig-cell-overlay"></div>${aprStatus}</div>`;
   }).join('');
+}
+
+function aprBadge(c) {
+  if (c.clientAprobo === 'Sí')      return `<div class="ig-cell-status ok">✓</div>`;
+  if (c.clientAprobo === 'Cambios') return `<div class="ig-cell-status chg">!</div>`;
+  return '';
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
@@ -1375,6 +1437,26 @@ function showBrandSelector(brands) {
       </div>
     </div>`;
 }
+
+// ── STORAGE SYNC ───────────────────────────────────────────────
+/** Re-lee _brand desde localStorage (para reflejar cambios del admin en otra pestaña) */
+function loadBrandFromStorage() {
+  if (!_brandId) return false;
+  const rawState = localStorage.getItem(STORAGE_KEY);
+  if (!rawState) return false;
+  try {
+    const appState = JSON.parse(rawState);
+    const updated = appState.brands?.[_brandId];
+    if (updated) { _brand = updated; return true; }
+  } catch(e) {}
+  return false;
+}
+
+/** Escucha cambios de localStorage de otra pestaña (admin) y re-renderiza */
+window.addEventListener('storage', (e) => {
+  if (e.key !== STORAGE_KEY) return;
+  if (loadBrandFromStorage()) renderMonth();
+});
 
 // ── START ──────────────────────────────────────────────────────
 init();
