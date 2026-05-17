@@ -178,6 +178,8 @@ function load() {
           if (!c.ig) c.ig = { publicado: 'No', fecha: '', link: '' };
           if (!c.tk) c.tk = { publicado: 'No', fecha: '', link: '' };
           if (!c.fb) c.fb = { publicado: 'No', fecha: '', link: '' };
+          if (c.driveVideo  === undefined) c.driveVideo  = '';
+          if (c.driveFolder === undefined) c.driveFolder = '';
         });
       });
       // Migration: Sentido Óptico uses TikTok, not Facebook
@@ -952,6 +954,8 @@ function openEditContenido(id) {
   g('cClientAprobo', c?.clientAprobo||'');
   g('cFechaAprobacion', c?.fechaAprobacion);
   g('cObs', c?.obs);
+  g('cDriveVideo',  c?.driveVideo);
+  g('cDriveFolder', c?.driveFolder);
   buildPlatformAccordions(c);
   openModal('modal-contenido');
 }
@@ -1026,7 +1030,9 @@ function saveContenido() {
     estado: document.getElementById('cEstado').value,
     clientAprobo: document.getElementById('cClientAprobo').value,
     fechaAprobacion: document.getElementById('cFechaAprobacion').value,
-    obs:   document.getElementById('cObs').value.trim(),
+    obs:        document.getElementById('cObs').value.trim(),
+    driveVideo:  document.getElementById('cDriveVideo')?.value.trim()  || '',
+    driveFolder: document.getElementById('cDriveFolder')?.value.trim() || '',
     ...platData
   };
 
@@ -2050,6 +2056,8 @@ function importData(event) {
           if (!c.ig) c.ig = { publicado: 'No', fecha: '', link: '' };
           if (!c.tk) c.tk = { publicado: 'No', fecha: '', link: '' };
           if (!c.fb) c.fb = { publicado: 'No', fecha: '', link: '' };
+          if (c.driveVideo  === undefined) c.driveVideo  = '';
+          if (c.driveFolder === undefined) c.driveFolder = '';
         });
       });
       save();
@@ -2166,6 +2174,64 @@ function downloadICS() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('Archivo .ics descargado ✓');
+}
+
+// ── EXPORTAR VISTA CLIENTE ───────────────────────────────────
+/**
+ * Genera client-data.json con todos los datos visibles para clientes.
+ * El admin descarga el archivo y lo sube al repositorio GitHub.
+ * client.html intentará cargarlo con fetch('./client-data.json').
+ */
+function generateClientExport() {
+  const exportData = { _generated: new Date().toISOString(), _version: 2, brands: {} };
+
+  for (const [id, b] of Object.entries(state.brands || {})) {
+    // Solo campos visibles para el cliente por contenido
+    const contenidos = (b.contenidos || []).map(c => ({
+      id:              c.id,
+      mes:             c.mes,
+      tipo:            c.tipo,
+      idea:            c.idea,
+      objetivo:        c.objetivo,
+      hook:            c.hook   || '',
+      cta:             c.cta   || '',
+      estado:          c.estado,
+      clientAprobo:    c.clientAprobo   || '',
+      fechaAprobacion: c.fechaAprobacion || '',
+      clientNota:      c.clientNota     || '',
+      obs:             c.obs            || '',
+      driveVideo:      c.driveVideo     || '',
+      driveFolder:     c.driveFolder    || '',
+      ig: { publicado: c.ig?.publicado || 'No', fecha: c.ig?.fecha || '', link: c.ig?.link || '' },
+      tk: { publicado: c.tk?.publicado || 'No', fecha: c.tk?.fecha || '', link: c.tk?.link || '' },
+    }));
+
+    exportData.brands[id] = {
+      id:                 b.id,
+      nombre:             b.nombre,
+      sector:             b.sector     || '',
+      color:              b.color      || '#F45A00',
+      igHandle:           b.igHandle   || '',
+      tkHandle:           b.tkHandle   || '',
+      plataformas:        b.plataformas || [],
+      clientHiddenMonths: b.clientHiddenMonths || [],
+      clientHiddenPlats:  b.clientHiddenPlats  || [],
+      clientPin:          b.clientPin  || '',
+      contenidos,
+      feedByMonth:        b.feedByMonth || {},
+    };
+  }
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'client-data.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
+
+  showToast('📤 client-data.json descargado — súbelo a GitHub para que clientes vean datos actualizados');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
