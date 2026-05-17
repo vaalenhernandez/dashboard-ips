@@ -2231,7 +2231,46 @@ function generateClientExport() {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
 
-  showToast('📤 client-data.json descargado — súbelo a GitHub para que clientes vean datos actualizados');
+  // Mostrar instrucciones para subir el archivo a GitHub
+  showExportInstructions();
+}
+
+function showExportInstructions() {
+  // Abrir modal con instrucciones paso a paso
+  const existing = document.getElementById('modal-export-instructions');
+  if (existing) { existing.classList.add('open'); return; }
+
+  const m = document.createElement('div');
+  m.className = 'modal-overlay open';
+  m.id = 'modal-export-instructions';
+  m.innerHTML = `
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">📤 Vista cliente exportada</h2>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--t-soft);margin:0 0 16px;">
+          Se descargó <strong>client-data.json</strong>. Para que tus clientes vean los datos actualizados desde cualquier dispositivo, sigue estos pasos:
+        </p>
+        <ol style="font-size:13px;line-height:2;padding-left:20px;color:var(--text);margin:0 0 16px;">
+          <li>Abre <a href="https://github.com/vaalenhernandez/dashboard-ips" target="_blank" style="color:var(--accent);">tu repositorio en GitHub ↗</a></li>
+          <li>Haz clic en <strong>Add file → Upload files</strong></li>
+          <li>Arrastra o selecciona el archivo <strong>client-data.json</strong> descargado</li>
+          <li>Escribe un mensaje como <em>"Actualizar vista cliente"</em> y haz clic en <strong>Commit changes</strong></li>
+          <li>Espera ~1 minuto y el link del cliente mostrará los datos actualizados ✅</li>
+        </ol>
+        <div style="background:var(--bg-secondary);border-radius:10px;padding:12px;font-size:12px;color:var(--t-soft);">
+          💡 <strong>Tip:</strong> El link del cliente es:<br>
+          <code style="font-size:11px;word-break:break-all;">https://vaalenhernandez.github.io/dashboard-ips/client.html?brand=so</code>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" onclick="this.closest('.modal-overlay').classList.remove('open')">Entendido ✓</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(m);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

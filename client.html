@@ -777,15 +777,17 @@
 
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────────
-const STORAGE_KEY = 'pal_agency_v3';
-const SESSION_KEY = 'pal_client_auth';
+const STORAGE_KEY        = 'pal_agency_v3';          // admin localStorage (read-only en cliente)
+const SESSION_KEY        = 'pal_client_auth';
+const CLIENT_APR_KEY     = 'pal_client_approvals_v1'; // aprobaciones del cliente (siempre local)
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 // ── STATE ──────────────────────────────────────────────────────
-let _brand    = null;
-let _brandId  = null;
-let _month    = null;
+let _brand      = null;
+let _brandId    = null;
+let _month      = null;
+let _dataSource = 'json'; // 'json' | 'local' — de dónde vienen los datos
 let _pendingChangesId = null;
 let _modalContentId   = null;
 let _filterPlat  = '';
@@ -821,6 +823,8 @@ function init() {
 }
 
 function _initWithState(appState, brandParam, keyParam, isLocal) {
+  _dataSource = isLocal ? 'local' : 'json';
+
   // Find brand by ID or slugified name
   const brands = Object.values(appState.brands || {});
   _brand = brands.find(b =>
@@ -840,7 +844,10 @@ function _initWithState(appState, brandParam, keyParam, isLocal) {
 
   _brandId = _brand.id;
 
-  // Aviso si se están usando datos locales (no publicados)
+  // Fusionar aprobaciones previas del cliente (guardadas localmente aunque datos vengan de JSON)
+  _mergeClientApprovals();
+
+  // Aviso si se están usando datos locales (no publicados en GitHub)
   if (isLocal) {
     const notice = document.getElementById('localDataNotice');
     if (notice) notice.style.display = 'flex';
@@ -938,7 +945,8 @@ function selectMonth(m) {
 }
 
 function renderMonth() {
-  // Refrescar _brand desde localStorage para siempre leer datos actualizados del admin
+  // En modo local: refresca desde admin localStorage
+  // En modo json: no toca _brand (datos ya cargados del JSON)
   loadBrandFromStorage();
 
   const hiddenPlats  = _brand.clientHiddenPlats  || [];
@@ -1366,34 +1374,52 @@ function confirmChanges() {
 }
 
 function writeApproval(id, status, note) {
-  const rawState = localStorage.getItem(STORAGE_KEY);
-  if (!rawState) return;
-  try {
-    const appState = JSON.parse(rawState);
-    const brand = appState.brands[_brandId];
-    if (!brand) return;
-    const c = brand.contenidos.find(x => x.id === id);
-    if (!c) return;
-    c.clientAprobo = status;
-    c.clientNota   = note || '';
-    if (status === 'Sí') c.clientNota = '';
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-    _brand = appState.brands[_brandId];
-    renderMonth();
+  // 1. Actualizar en memoria (_brand) — funciona siempre, sin importar el origen
+  const c = (_brand.contenidos || []).find(x => x.id === id);
+  if (!c) return;
+  c.clientAprobo = status;
+  c.clientNota   = status === 'Sí' ? '' : (note || '');
 
-    // If this card's modal is open, refresh its approval row in place
-    if (_modalContentId === id) {
-      const updatedC = (_brand.contenidos || []).find(x => x.id === id);
-      if (updatedC) {
-        const row = document.getElementById('modalApprovalRow');
-        if (row) row.innerHTML = renderApprovalRow(updatedC);
-        const noteArea = document.getElementById('modalNoteArea');
-        if (noteArea) noteArea.innerHTML = updatedC.clientNota
-          ? `<div class="client-note" style="margin-top:8px;">⚠️ ${esc(updatedC.clientNota)}</div>` : '';
-        document.getElementById('cardModal').classList.remove('hidden');
+  // 2. Persistir aprobación en clave propia del cliente (independiente del admin)
+  try {
+    const saved = JSON.parse(localStorage.getItem(CLIENT_APR_KEY) || '{}');
+    saved[id] = {
+      brandId: _brandId,
+      clientAprobo: c.clientAprobo,
+      clientNota:   c.clientNota,
+      updatedAt:    new Date().toISOString()
+    };
+    localStorage.setItem(CLIENT_APR_KEY, JSON.stringify(saved));
+  } catch(e) {}
+
+  // 3. Si estamos en modo local (admin localStorage), también persistir ahí
+  if (_dataSource === 'local') {
+    try {
+      const rawState = localStorage.getItem(STORAGE_KEY);
+      if (rawState) {
+        const appState = JSON.parse(rawState);
+        const b = appState.brands?.[_brandId];
+        if (b) {
+          const ci = (b.contenidos || []).find(x => x.id === id);
+          if (ci) { ci.clientAprobo = c.clientAprobo; ci.clientNota = c.clientNota; }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        }
       }
-    }
-  } catch(e) { showToast('Error al guardar', 'error'); }
+    } catch(e) {}
+  }
+
+  // 4. Re-renderizar
+  renderMonth();
+
+  // 5. Actualizar modal si está abierto (sin cerrarlo)
+  if (_modalContentId === id) {
+    const row = document.getElementById('modalApprovalRow');
+    if (row) row.innerHTML = renderApprovalRow(c);
+    const noteArea = document.getElementById('modalNoteArea');
+    if (noteArea) noteArea.innerHTML = c.clientNota
+      ? `<div class="client-note" style="margin-top:8px;">⚠️ ${esc(c.clientNota)}</div>` : '';
+    document.getElementById('cardModal').classList.remove('hidden');
+  }
 }
 
 // ── FEED PREVIEW ───────────────────────────────────────────────
@@ -1579,22 +1605,49 @@ function showBrandSelector(brands) {
 }
 
 // ── STORAGE SYNC ───────────────────────────────────────────────
-/** Re-lee _brand desde localStorage (para reflejar cambios del admin en otra pestaña) */
+
+/**
+ * Fusiona aprobaciones guardadas por el cliente (CLIENT_APR_KEY)
+ * en los contenidos de _brand, para que persistan entre recargas.
+ */
+function _mergeClientApprovals() {
+  if (!_brand || !_brandId) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(CLIENT_APR_KEY) || '{}');
+    (_brand.contenidos || []).forEach(c => {
+      const apr = saved[c.id];
+      if (apr && apr.brandId === _brandId) {
+        c.clientAprobo = apr.clientAprobo;
+        c.clientNota   = apr.clientNota;
+      }
+    });
+  } catch(e) {}
+}
+
+/**
+ * Re-lee _brand desde localStorage del admin.
+ * SOLO se usa en modo 'local' (cuando el cliente abre en el mismo navegador que el admin).
+ * En modo 'json' NO toca _brand para no sobreescribir datos de client-data.json.
+ */
 function loadBrandFromStorage() {
-  if (!_brandId) return false;
+  if (!_brandId || _dataSource !== 'local') return false;
   const rawState = localStorage.getItem(STORAGE_KEY);
   if (!rawState) return false;
   try {
     const appState = JSON.parse(rawState);
     const updated = appState.brands?.[_brandId];
-    if (updated) { _brand = updated; return true; }
+    if (updated) {
+      _brand = updated;
+      _mergeClientApprovals(); // siempre re-aplicar aprobaciones del cliente
+      return true;
+    }
   } catch(e) {}
   return false;
 }
 
-/** Escucha cambios de localStorage de otra pestaña (admin) y re-renderiza */
+/** Escucha cambios del admin en otra pestaña (solo en modo local) */
 window.addEventListener('storage', (e) => {
-  if (e.key !== STORAGE_KEY) return;
+  if (e.key !== STORAGE_KEY || _dataSource !== 'local') return;
   if (loadBrandFromStorage()) renderMonth();
 });
 
