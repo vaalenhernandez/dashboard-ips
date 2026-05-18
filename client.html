@@ -918,11 +918,10 @@ function renderApp() {
   const allMonths = [...new Set((_brand.contenidos || []).map(c => c.mes))];
   const orderedMonths = MONTHS.filter(m => allMonths.includes(m) && !hiddenMonths.includes(m));
 
-  // Default to first available month or current
-  if (!_month) {
-    const rawState = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    _month = rawState.currentMonth || orderedMonths[0] || 'Marzo';
-    if (!orderedMonths.includes(_month)) _month = orderedMonths[0] || _month;
+  // Default to first available month
+  // IMPORTANT: do NOT read localStorage here — it's null when loaded from client-data.json
+  if (!_month || !orderedMonths.includes(_month)) {
+    _month = orderedMonths[0] || 'Marzo';
   }
 
   renderMonthTabs(orderedMonths);
