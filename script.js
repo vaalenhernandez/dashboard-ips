@@ -2225,7 +2225,7 @@ function _buildBrandPayload(brandId) {
     brandId,
     data: {
       nombre: b.nombre,
-      contenidos: (b.contenidos || []).map(c => { const { img, portada, ...rest } = c; return rest; }),
+      contenidos: (b.contenidos || []).map(c => { const { img, ...rest } = c; return rest; }),
       feedByMonth: feedByMonthClean,
       clientHiddenMonths: b.clientHiddenMonths || [],
       clientHiddenPlatforms: b.clientHiddenPlatforms || []
@@ -2239,6 +2239,7 @@ function _formPost(url, payload) {
     const iframe = document.createElement('iframe');
     iframe.name = iframeName;
     iframe.style.display = 'none';
+    iframe.setAttribute('sandbox', 'allow-forms allow-scripts allow-same-origin');
     document.body.appendChild(iframe);
 
     const form = document.createElement('form');
