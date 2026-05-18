@@ -2225,7 +2225,7 @@ function _buildBrandPayload(brandId) {
     brandId,
     data: {
       nombre: b.nombre,
-      contenidos: (b.contenidos || []).map(c => { const { img, ...rest } = c; return rest; }),
+      contenidos: (b.contenidos || []).map(c => { const { img, portada, ...rest } = c; return rest; }),
       feedByMonth: feedByMonthClean,
       clientHiddenMonths: b.clientHiddenMonths || [],
       clientHiddenPlatforms: b.clientHiddenPlatforms || []
