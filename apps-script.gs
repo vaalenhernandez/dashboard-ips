@@ -52,7 +52,10 @@ function doGet(e) {
 // ── GUARDAR datos (admin los envía aquí) ─────────────────────
 function doPost(e) {
   try {
-    const body = JSON.parse(e.postData.contents);
+    // Soporta JSON directo (text/plain) y formulario HTML (form POST)
+    let body;
+    try { body = JSON.parse(e.postData.contents); }
+    catch(pe) { body = JSON.parse(e.parameter.payload || '{}'); }
     const { brandId, data } = body;
 
     if (!brandId || !data) {

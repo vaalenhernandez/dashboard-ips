@@ -2233,6 +2233,39 @@ function _buildBrandPayload(brandId) {
   };
 }
 
+function _formPost(url, payload) {
+  return new Promise(resolve => {
+    const iframeName = 'sync_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+
+    const cleanup = () => {
+      try { document.body.removeChild(iframe); } catch(e) {}
+      try { document.body.removeChild(form); } catch(e) {}
+    };
+
+    iframe.addEventListener('load', () => { cleanup(); resolve(); });
+    setTimeout(() => { cleanup(); resolve(); }, 8000);
+
+    form.submit();
+  });
+}
+
 async function syncBrandToCloud() {
   const url = getSyncUrl();
   if (!url) { showToast('Configura la URL de Apps Script primero', 'error'); return; }
@@ -2249,10 +2282,9 @@ async function syncBrandToCloud() {
     const payload = _buildBrandPayload(brandId);
     if (!payload) continue;
     try {
-      // no-cors evita bloqueo de CORS en Apps Script; la data llega aunque la respuesta sea opaca
-      await fetch(url, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+      await _formPost(url, payload);
       ok++;
-    } catch(e) { fail++; }
+    } catch(e) { console.error('[sync] Error en', brandId, e); fail++; }
   }
 
   if (btn) { btn.textContent = original; btn.disabled = false; }
